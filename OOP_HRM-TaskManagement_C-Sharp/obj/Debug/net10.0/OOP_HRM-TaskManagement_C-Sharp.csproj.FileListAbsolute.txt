@@ -1,0 +1,30 @@
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.AssemblyInfoInputs.cache
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.AssemblyInfo.cs
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.csproj.CoreCompileInputs.cache
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.sourcelink.json
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.exe
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.deps.json
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.runtimeconfig.json
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.pdb
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\refint\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.pdb
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.genruntimeconfig.cache
+C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp\obj\Debug\net10.0\ref\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.exe
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.deps.json
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.runtimeconfig.json
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\bin\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.pdb
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.AssemblyInfoInputs.cache
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.AssemblyInfo.cs
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.csproj.CoreCompileInputs.cache
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.sourcelink.json
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\refint\OOP_HRM-TaskManagement_C-Sharp.dll
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.pdb
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\OOP_HRM-TaskManagement_C-Sharp.genruntimeconfig.cache
+C:\Users\DUONG\Downloads\HR\HRM & Task Management - CSharp\obj\Debug\net10.0\ref\OOP_HRM-TaskManagement_C-Sharp.dll

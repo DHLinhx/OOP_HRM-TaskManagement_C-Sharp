@@ -1,3 +1,4 @@
 {
-    "dotnet.defaultSolution": "OOP_HRM-TaskManagement_C-Sharp.sln"
+    "dotnet.defaultSolution": "OOP_HRM-TaskManagement_C-Sharp.sln",
+    "files.encoding": "utf8"
 }
