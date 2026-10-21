@@ -6,55 +6,65 @@ namespace com.hrmis.services;
 
 public class VanHanhService
 {
+    // Helper: Tìm tên nhân viên theo mã (LINQ + Lambda)
+    private string getTenNhanVien(int maNV)
+    {
+        var nv = DatabaseMock.dsNhanVien.FirstOrDefault(n => n.getMaNhanVien() == maNV);
+        return nv != null ? nv.HoTenNV() : "Mã " + maNV;
+    }
+
+    // Helper: Tìm tên ca làm việc theo mã (LINQ + Lambda)
+    private string getTenCa(int maCa)
+    {
+        var ca = DatabaseMock.dsCaLamViec.FirstOrDefault(c => c.getMaCa() == maCa);
+        return ca != null ? ca.getTenCa() : "Ca " + maCa;
+    }
+
+    // Helper: Tìm số hợp đồng theo mã hợp đồng (LINQ + Lambda)
+    private string getSoHopDong(int maHopDong)
+    {
+        var hd = DatabaseMock.dsHopDong.FirstOrDefault(h => h.getMaHopDong() == maHopDong);
+        return hd != null ? hd.getSoHopDong() : "Mã HĐ: " + maHopDong;
+    }
+
     // =========================================================================
     // CÂU 1: Bản in hợp đồng chi tiết
     // =========================================================================
     public void inHopDongChiTiet(int maHopDong)
     {
-        foreach (var hd in DatabaseMock.dsHopDong)
+        var hd = DatabaseMock.dsHopDong.FirstOrDefault(h => h.getMaHopDong() == maHopDong);
+        if (hd == null)
         {
-            if (hd.getMaHopDong() == maHopDong)
-            {
-                string tenNV = "Mã " + hd.getMaNhanVien();
-                foreach (var nv in DatabaseMock.dsNhanVien)
-                {
-                    if (nv.getMaNhanVien() == hd.getMaNhanVien())
-                    {
-                        tenNV = nv.HoTenNV() + " (Mã " + nv.getMaNhanVien() + ")";
-                        break;
-                    }
-                }
-
-                Console.WriteLine("==============================================================================");
-                Console.WriteLine("CHI TIẾT HỢP ĐỒNG LAO ĐỘNG: " + hd.getSoHopDong());
-                Console.WriteLine("==============================================================================");
-                Console.WriteLine($"Nhân viên ký kết : {tenNV}");
-                Console.WriteLine($"Loại hợp đồng    : {hd.getLoaiHopDong()}");
-                Console.WriteLine($"Thời hạn         : {hd.getNgayHieuLuc()} -> {(hd.getNgayHetHan().HasValue ? hd.getNgayHetHan().Value.ToString() : "Vô thời hạn")}");
-                Console.WriteLine(string.Format("Lương thỏa thuận : {0:N0} VNĐ", hd.getLuongThoaThuan()));
-                Console.WriteLine($"Trạng thái       : {hd.getTrangThai()}");
-                Console.WriteLine("------------------------------------------------------------------------------");
-                Console.WriteLine("CÁC ĐIỀU KHOẢN ĐIỀU KIỆN KÈM THEO:");
-
-                bool coDieuKhoan = false;
-                foreach (var dk in DatabaseMock.dsDieuKhoanHopDong)
-                {
-                    if (dk.getMaHopDong() == maHopDong)
-                    {
-                        coDieuKhoan = true;
-                        Console.WriteLine(string.Format("  [Điều {0}] {1,-25} ({2})", dk.getSoThuTuDieu(), dk.getTieuDeDieuKhoan(), dk.getLoaiDieuKhoan()));
-                        Console.WriteLine($"          -> {dk.getNoiDungDieuKhoan()}");
-                    }
-                }
-                if (!coDieuKhoan)
-                {
-                    Console.WriteLine("  (Hợp đồng không có điều khoản phụ kèm theo)");
-                }
-                return;
-            }
+            Console.WriteLine("Không tìm thấy hợp đồng có mã: " + maHopDong);
+            return;
         }
 
-        Console.WriteLine("Không tìm thấy hợp đồng có mã: " + maHopDong);
+        string tenNV = $"{getTenNhanVien(hd.getMaNhanVien())} (Mã {hd.getMaNhanVien()})";
+
+        Console.WriteLine("==============================================================================");
+        Console.WriteLine("CHI TIẾT HỢP ĐỒNG LAO ĐỘNG: " + hd.getSoHopDong());
+        Console.WriteLine("==============================================================================");
+        Console.WriteLine($"Nhân viên ký kết : {tenNV}");
+        Console.WriteLine($"Loại hợp đồng    : {hd.getLoaiHopDong()}");
+        Console.WriteLine($"Thời hạn         : {hd.getNgayHieuLuc()} -> {(hd.getNgayHetHan().HasValue ? hd.getNgayHetHan().Value.ToString() : "Vô thời hạn")}");
+        Console.WriteLine(string.Format("Lương thỏa thuận : {0:N0} VNĐ", hd.getLuongThoaThuan()));
+        Console.WriteLine($"Trạng thái       : {hd.getTrangThai()}");
+        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine("CÁC ĐIỀU KHOẢN ĐIỀU KIỆN KÈM THEO:");
+
+        var dsDK = DatabaseMock.dsDieuKhoanHopDong.Where(dk => dk.getMaHopDong() == maHopDong).ToList();
+        if (dsDK.Count == 0)
+        {
+            Console.WriteLine("  (Hợp đồng không có điều khoản phụ kèm theo)");
+        }
+        else
+        {
+            dsDK.ForEach(dk =>
+            {
+                Console.WriteLine(string.Format("  [Điều {0}] {1,-25} ({2})", dk.getSoThuTuDieu(), dk.getTieuDeDieuKhoan(), dk.getLoaiDieuKhoan()));
+                Console.WriteLine($"          -> {dk.getNoiDungDieuKhoan()}");
+            });
+        }
     }
 
     // =========================================================================
@@ -69,35 +79,25 @@ public class VanHanhService
         Console.WriteLine("------------------------------------------------------------------------------");
 
         DateOnly moc30NgaySau = mocThoiGian.AddDays(30);
-        bool timThay = false;
 
-        foreach (var hd in DatabaseMock.dsHopDong)
-        {
-            if (hd.getNgayHetHan().HasValue)
-            {
-                DateOnly ngayHetHan = hd.getNgayHetHan().Value;
-                if (ngayHetHan >= mocThoiGian && ngayHetHan <= moc30NgaySau)
-                {
-                    timThay = true;
-                    string hoTen = "";
-                    foreach (var nv in DatabaseMock.dsNhanVien)
-                    {
-                        if (nv.getMaNhanVien() == hd.getMaNhanVien())
-                        {
-                            hoTen = nv.HoTenNV();
-                            break;
-                        }
-                    }
-                    Console.WriteLine(string.Format("{0,-14} {1,-8} {2,-22} {3,-18} {4}",
-                        hd.getSoHopDong(), hd.getMaNhanVien(), hoTen, hd.getLoaiHopDong(), ngayHetHan));
-                }
-            }
-        }
+        var dsSapHetHan = DatabaseMock.dsHopDong
+            .Where(hd => hd.getNgayHetHan().HasValue
+                         && hd.getNgayHetHan().Value >= mocThoiGian
+                         && hd.getNgayHetHan().Value <= moc30NgaySau)
+            .ToList();
 
-        if (!timThay)
+        if (dsSapHetHan.Count == 0)
         {
             Console.WriteLine("-> Không có hợp đồng nào sắp hết hạn trong 30 ngày tới.");
+            return;
         }
+
+        dsSapHetHan.ForEach(hd =>
+        {
+            string hoTen = getTenNhanVien(hd.getMaNhanVien());
+            Console.WriteLine(string.Format("{0,-14} {1,-8} {2,-22} {3,-18} {4}",
+                hd.getSoHopDong(), hd.getMaNhanVien(), hoTen, hd.getLoaiHopDong(), hd.getNgayHetHan()));
+        });
     }
 
     // =========================================================================
@@ -105,15 +105,7 @@ public class VanHanhService
     // =========================================================================
     public void inBangChamCongCaNhan(int maNhanVien, int thang, int nam)
     {
-        string hoTen = "Mã " + maNhanVien;
-        foreach (var nv in DatabaseMock.dsNhanVien)
-        {
-            if (nv.getMaNhanVien() == maNhanVien)
-            {
-                hoTen = nv.HoTenNV();
-                break;
-            }
-        }
+        string hoTen = getTenNhanVien(maNhanVien);
 
         Console.WriteLine("==============================================================================");
         Console.WriteLine(string.Format("BẢNG CHẤM CÔNG NHÂN VIÊN: {0} (Mã {1}) - THÁNG {2:D2}/{3}", hoTen, maNhanVien, thang, nam));
@@ -121,46 +113,37 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-12} {1,-18} {2,-10} {3,-10} {4,-12} {5}", "Ngày", "Ca làm việc", "Giờ vào", "Giờ ra", "Số giờ làm", "Trạng thái"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        bool timThay = false;
-        foreach (var cc in DatabaseMock.dsChamCong)
-        {
-            if (cc.getMaNhanVien() == maNhanVien
-                && cc.getNgayLamViec().Month == thang
-                && cc.getNgayLamViec().Year == nam)
-            {
-                timThay = true;
-                string tenCa = "Ca " + cc.getMaCa();
-                foreach (var ca in DatabaseMock.dsCaLamViec)
-                {
-                    if (ca.getMaCa() == cc.getMaCa())
-                    {
-                        tenCa = ca.getTenCa();
-                        break;
-                    }
-                }
+        var dsCong = DatabaseMock.dsChamCong
+            .Where(cc => cc.getMaNhanVien() == maNhanVien
+                         && cc.getNgayLamViec().Month == thang
+                         && cc.getNgayLamViec().Year == nam)
+            .ToList();
 
-                double soGioLam = 0.0;
-                if (cc.getGioVaoThucTe().HasValue && cc.getGioRaThucTe().HasValue)
-                {
-                    var timeIn = cc.getGioVaoThucTe().Value.ToTimeSpan();
-                    var timeOut = cc.getGioRaThucTe().Value.ToTimeSpan();
-                    soGioLam = (timeOut - timeIn).TotalHours;
-                }
-
-                Console.WriteLine(string.Format("{0,-12} {1,-18} {2,-10} {3,-10} {4,-12} {5}",
-                    cc.getNgayLamViec(),
-                    tenCa,
-                    cc.getGioVaoThucTe(),
-                    cc.getGioRaThucTe(),
-                    string.Format("{0:F1} giờ", soGioLam),
-                    cc.getTrangThaiCong()));
-            }
-        }
-
-        if (!timThay)
+        if (dsCong.Count == 0)
         {
             Console.WriteLine("-> Không tìm thấy dữ liệu chấm công trong tháng này.");
+            return;
         }
+
+        dsCong.ForEach(cc =>
+        {
+            string tenCa = getTenCa(cc.getMaCa());
+            double soGioLam = 0.0;
+            if (cc.getGioVaoThucTe().HasValue && cc.getGioRaThucTe().HasValue)
+            {
+                var timeIn = cc.getGioVaoThucTe().Value.ToTimeSpan();
+                var timeOut = cc.getGioRaThucTe().Value.ToTimeSpan();
+                soGioLam = (timeOut - timeIn).TotalHours;
+            }
+
+            Console.WriteLine(string.Format("{0,-12} {1,-18} {2,-10} {3,-10} {4,-12} {5}",
+                cc.getNgayLamViec(),
+                tenCa,
+                cc.getGioVaoThucTe(),
+                cc.getGioRaThucTe(),
+                string.Format("{0:F1} giờ", soGioLam),
+                cc.getTrangThaiCong()));
+        });
     }
 
     // =========================================================================
@@ -188,25 +171,19 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3}", "Hạng", "Mã NV", "Họ và tên", "Số lần đi trễ"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        List<ThongKeDiTre> danhSach = new();
-        foreach (var nv in DatabaseMock.dsNhanVien)
-        {
-            int soLanTre = 0;
-            foreach (var cc in DatabaseMock.dsChamCong)
+        var danhSach = DatabaseMock.dsNhanVien
+            .Select(nv =>
             {
-                if (cc.getMaNhanVien() == nv.getMaNhanVien()
+                int soLanTre = DatabaseMock.dsChamCong.Count(cc =>
+                    cc.getMaNhanVien() == nv.getMaNhanVien()
                     && cc.getNgayLamViec().Month == thang
                     && cc.getNgayLamViec().Year == nam
-                    && cc.getTrangThaiCong() == TrangThaiCong.DI_TRE)
-                {
-                    soLanTre++;
-                }
-            }
-            if (soLanTre > 0)
-            {
-                danhSach.Add(new ThongKeDiTre(nv.getMaNhanVien(), nv.HoTenNV(), soLanTre));
-            }
-        }
+                    && cc.getTrangThaiCong() == TrangThaiCong.DI_TRE);
+                return new ThongKeDiTre(nv.getMaNhanVien(), nv.HoTenNV(), soLanTre);
+            })
+            .Where(tk => tk.soLan > 0)
+            .OrderByDescending(tk => tk.soLan)
+            .ToList();
 
         if (danhSach.Count == 0)
         {
@@ -214,12 +191,9 @@ public class VanHanhService
             return;
         }
 
-        danhSach.Sort((a, b) => b.soLan.CompareTo(a.soLan));
         int rank = 1;
-        foreach (var tk in danhSach)
-        {
-            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3} lần", rank++, tk.maNV, tk.hoTen, tk.soLan));
-        }
+        danhSach.ForEach(tk =>
+            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3} lần", rank++, tk.maNV, tk.hoTen, tk.soLan)));
     }
 
     // =========================================================================
@@ -247,24 +221,19 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3}", "Hạng", "Mã NV", "Họ và tên", "Tổng số giờ OT"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        List<ThongKeOT> danhSach = new();
-        foreach (var nv in DatabaseMock.dsNhanVien)
-        {
-            double soGio = 0;
-            foreach (var cc in DatabaseMock.dsChamCong)
+        var danhSach = DatabaseMock.dsNhanVien
+            .Select(nv =>
             {
-                if (cc.getMaNhanVien() == nv.getMaNhanVien()
-                    && cc.getNgayLamViec().Month == thang
-                    && cc.getNgayLamViec().Year == nam)
-                {
-                    soGio += cc.getSoGioLamThem();
-                }
-            }
-            if (soGio > 0)
-            {
-                danhSach.Add(new ThongKeOT(nv.getMaNhanVien(), nv.HoTenNV(), soGio));
-            }
-        }
+                double soGio = DatabaseMock.dsChamCong
+                    .Where(cc => cc.getMaNhanVien() == nv.getMaNhanVien()
+                                 && cc.getNgayLamViec().Month == thang
+                                 && cc.getNgayLamViec().Year == nam)
+                    .Sum(cc => cc.getSoGioLamThem());
+                return new ThongKeOT(nv.getMaNhanVien(), nv.HoTenNV(), soGio);
+            })
+            .Where(tk => tk.soGio > 0)
+            .OrderByDescending(tk => tk.soGio)
+            .ToList();
 
         if (danhSach.Count == 0)
         {
@@ -272,12 +241,9 @@ public class VanHanhService
             return;
         }
 
-        danhSach.Sort((a, b) => b.soGio.CompareTo(a.soGio));
         int rank = 1;
-        foreach (var tk in danhSach)
-        {
-            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3:F1} giờ", rank++, tk.maNV, tk.hoTen, tk.soGio));
-        }
+        danhSach.ForEach(tk =>
+            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3:F1} giờ", rank++, tk.maNV, tk.hoTen, tk.soGio)));
     }
 
     // =========================================================================
@@ -291,47 +257,26 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-8} {1,-22} {2,-16} {3,-10} {4,-24} {5}", "Mã đơn", "Người nộp", "Loại nghỉ", "Số ngày", "Thời gian", "Người duyệt"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        bool timThay = false;
-        foreach (var don in DatabaseMock.dsDonXinNghi)
-        {
-            if (don.getTrangThaiDuyet() == TrangThaiDuyet.CHO_DUYET)
-            {
-                timThay = true;
-                string tenNguoiNop = "Mã " + don.getMaNhanVien();
-                foreach (var nv in DatabaseMock.dsNhanVien)
-                {
-                    if (nv.getMaNhanVien() == don.getMaNhanVien())
-                    {
-                        tenNguoiNop = nv.HoTenNV();
-                        break;
-                    }
-                }
+        var dsChoDuyet = DatabaseMock.dsDonXinNghi
+            .Where(don => don.getTrangThaiDuyet() == TrangThaiDuyet.CHO_DUYET)
+            .ToList();
 
-                string tenNguoiDuyet = "Chưa chỉ định";
-                if (don.getNguoiDuyet().HasValue)
-                {
-                    foreach (var nv in DatabaseMock.dsNhanVien)
-                    {
-                        if (nv.getMaNhanVien() == don.getNguoiDuyet().Value)
-                        {
-                            tenNguoiDuyet = nv.HoTenNV();
-                            break;
-                        }
-                    }
-                }
-
-                long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
-                string thoiGian = don.getNgayBatDau() + " -> " + don.getNgayKetThuc();
-
-                Console.WriteLine(string.Format("{0,-8} {1,-22} {2,-16} {3,-10} {4,-24} {5}",
-                    don.getMaDonNghi(), tenNguoiNop, don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, tenNguoiDuyet));
-            }
-        }
-
-        if (!timThay)
+        if (dsChoDuyet.Count == 0)
         {
             Console.WriteLine("-> Hiện không có đơn xin nghỉ phép nào đang chờ duyệt.");
+            return;
         }
+
+        dsChoDuyet.ForEach(don =>
+        {
+            string tenNguoiNop = getTenNhanVien(don.getMaNhanVien());
+            string tenNguoiDuyet = don.getNguoiDuyet().HasValue ? getTenNhanVien(don.getNguoiDuyet().Value) : "Chưa chỉ định";
+            long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
+            string thoiGian = $"{don.getNgayBatDau()} -> {don.getNgayKetThuc()}";
+
+            Console.WriteLine(string.Format("{0,-8} {1,-22} {2,-16} {3,-10} {4,-24} {5}",
+                don.getMaDonNghi(), tenNguoiNop, don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, tenNguoiDuyet));
+        });
     }
 
     // =========================================================================
@@ -339,22 +284,14 @@ public class VanHanhService
     // =========================================================================
     public void lsNghi(int maNV)
     {
-        string hoTen = "Không xác định";
-        bool timThayNV = false;
-        foreach (var nv in DatabaseMock.dsNhanVien)
-        {
-            if (nv.getMaNhanVien() == maNV)
-            {
-                hoTen = nv.HoTenNV();
-                timThayNV = true;
-                break;
-            }
-        }
+        bool timThayNV = DatabaseMock.dsNhanVien.Any(nv => nv.getMaNhanVien() == maNV);
         if (!timThayNV)
         {
             Console.WriteLine("Không tìm thấy nhân viên có mã: " + maNV);
             return;
         }
+
+        string hoTen = getTenNhanVien(maNV);
 
         Console.WriteLine("==============================================================================");
         Console.WriteLine(string.Format("LỊCH SỬ NGHỈ PHÉP: {0} (Mã {1})", hoTen, maNV));
@@ -362,23 +299,22 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-8} {1,-16} {2,-10} {3,-25} {4,-14} {5}", "Mã đơn", "Loại nghỉ", "Số ngày", "Thời gian", "Trạng thái", "Lý do"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        bool coDon = false;
-        foreach (var don in DatabaseMock.dsDonXinNghi)
-        {
-            if (don.getMaNhanVien() == maNV)
-            {
-                coDon = true;
-                long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
-                string thoiGian = don.getNgayBatDau() + " -> " + don.getNgayKetThuc();
+        var dsNghi = DatabaseMock.dsDonXinNghi.Where(don => don.getMaNhanVien() == maNV).ToList();
 
-                Console.WriteLine(string.Format("{0,-8} {1,-16} {2,-10} {3,-25} {4,-14} {5}",
-                    don.getMaDonNghi(), don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, don.getTrangThaiDuyet(), don.getLyDo()));
-            }
-        }
-        if (!coDon)
+        if (dsNghi.Count == 0)
         {
             Console.WriteLine("-> Nhân viên chưa có đơn xin nghỉ phép nào.");
+            return;
         }
+
+        dsNghi.ForEach(don =>
+        {
+            long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
+            string thoiGian = $"{don.getNgayBatDau()} -> {don.getNgayKetThuc()}";
+
+            Console.WriteLine(string.Format("{0,-8} {1,-16} {2,-10} {3,-25} {4,-14} {5}",
+                don.getMaDonNghi(), don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, don.getTrangThaiDuyet(), don.getLyDo()));
+        });
     }
 
     // =========================================================================
@@ -392,38 +328,40 @@ public class VanHanhService
         Console.WriteLine(string.Format("{0,-8} {1,-25} {2,-18} {3}", "Mã NV", "Họ và tên", "Số ngày công", "Tỷ lệ đúng giờ"));
         Console.WriteLine("------------------------------------------------------------------------------");
 
-        bool timThay = false;
-        foreach (var nv in DatabaseMock.dsNhanVien)
-        {
-            int tongcong = 0;
-            int dungGio = 0;
-            foreach (var cc in DatabaseMock.dsChamCong)
+        var dsChuyenCan = DatabaseMock.dsNhanVien
+            .Where(nv =>
             {
-                if (cc.getMaNhanVien() == nv.getMaNhanVien()
+                int tongCong = DatabaseMock.dsChamCong.Count(cc =>
+                    cc.getMaNhanVien() == nv.getMaNhanVien()
                     && cc.getNgayLamViec().Month == thang
-                    && cc.getNgayLamViec().Year == nam)
-                {
-                    tongcong++;
-                    if (cc.getTrangThaiCong() == TrangThaiCong.DUNG_GIO)
-                    {
-                        dungGio++;
-                    }
-                }
-            }
-            if (tongcong == dungGio && dungGio > 0)
-            {
-                timThay = true;
-                Console.WriteLine(string.Format("{0,-8} {1,-25} {2,-18} {3}",
-                    nv.getMaNhanVien(),
-                    nv.HoTenNV(),
-                    dungGio + "/" + tongcong + " ngày",
-                    "100%"));
-            }
-        }
-        if (!timThay)
+                    && cc.getNgayLamViec().Year == nam);
+                int dungGio = DatabaseMock.dsChamCong.Count(cc =>
+                    cc.getMaNhanVien() == nv.getMaNhanVien()
+                    && cc.getNgayLamViec().Month == thang
+                    && cc.getNgayLamViec().Year == nam
+                    && cc.getTrangThaiCong() == TrangThaiCong.DUNG_GIO);
+                return tongCong > 0 && tongCong == dungGio;
+            })
+            .ToList();
+
+        if (dsChuyenCan.Count == 0)
         {
             Console.WriteLine("-> Không có nhân viên nào đạt chuyên cần 100% trong tháng.");
+            return;
         }
+
+        dsChuyenCan.ForEach(nv =>
+        {
+            int tongCong = DatabaseMock.dsChamCong.Count(cc =>
+                cc.getMaNhanVien() == nv.getMaNhanVien()
+                && cc.getNgayLamViec().Month == thang
+                && cc.getNgayLamViec().Year == nam);
+            Console.WriteLine(string.Format("{0,-8} {1,-25} {2,-18} {3}",
+                nv.getMaNhanVien(),
+                nv.HoTenNV(),
+                tongCong + "/" + tongCong + " ngày",
+                "100%"));
+        });
     }
 
     // =========================================================================
@@ -435,41 +373,28 @@ public class VanHanhService
         Console.WriteLine("THỐNG KÊ NHÂN SỰ THEO TỪNG LOẠI HỢP ĐỒNG LAO ĐỘNG");
         Console.WriteLine("==============================================================================");
 
-        foreach (LoaiHopDong lhd in Enum.GetValues(typeof(LoaiHopDong)))
+        Enum.GetValues<LoaiHopDong>().ToList().ForEach(lhd =>
         {
-            int count = 0;
-            foreach (var hd in DatabaseMock.dsHopDong)
-            {
-                if (hd.getLoaiHopDong() == lhd && hd.getTrangThai() != TrangThaiHopDong.DA_HET_HAN)
-                {
-                    count++;
-                }
-            }
+            var dsHDTheoLoai = DatabaseMock.dsHopDong
+                .Where(hd => hd.getLoaiHopDong() == lhd && hd.getTrangThai() != TrangThaiHopDong.DA_HET_HAN)
+                .ToList();
 
-            Console.WriteLine(string.Format("\n>> LOẠI HỢP ĐỒNG: {0} ({1} nhân viên)", lhd, count));
-            if (count > 0)
+            Console.WriteLine(string.Format("\n>> LOẠI HỢP ĐỒNG: {0} ({1} nhân viên)", lhd, dsHDTheoLoai.Count));
+            if (dsHDTheoLoai.Count > 0)
             {
                 Console.WriteLine(string.Format("   {0,-8} {1,-22} {2,-15} {3}", "Mã NV", "Họ và tên", "Số hợp đồng", "Trạng thái HĐ"));
                 Console.WriteLine("   --------------------------------------------------------------------------");
-                foreach (var hd in DatabaseMock.dsHopDong)
+                dsHDTheoLoai.ForEach(hd =>
                 {
-                    if (hd.getLoaiHopDong() == lhd && hd.getTrangThai() != TrangThaiHopDong.DA_HET_HAN)
-                    {
-                        foreach (var nv in DatabaseMock.dsNhanVien)
-                        {
-                            if (nv.getMaNhanVien() == hd.getMaNhanVien())
-                            {
-                                Console.WriteLine(string.Format("   {0,-8} {1,-22} {2,-15} {3}",
-                                    nv.getMaNhanVien(),
-                                    nv.HoTenNV(),
-                                    hd.getSoHopDong(),
-                                    hd.getTrangThai()));
-                            }
-                        }
-                    }
-                }
+                    string hoTen = getTenNhanVien(hd.getMaNhanVien());
+                    Console.WriteLine(string.Format("   {0,-8} {1,-22} {2,-15} {3}",
+                        hd.getMaNhanVien(),
+                        hoTen,
+                        hd.getSoHopDong(),
+                        hd.getTrangThai()));
+                });
             }
-        }
+        });
     }
 
     // =========================================================================
@@ -481,36 +406,27 @@ public class VanHanhService
         Console.WriteLine("DANH SÁCH ĐIỀU KHOẢN PHÁP LÝ (BẢO MẬT & KỶ LUẬT)");
         Console.WriteLine("==============================================================================");
 
-        bool timThay = false;
-        foreach (var dk in DatabaseMock.dsDieuKhoanHopDong)
-        {
-            string loai = dk.getLoaiDieuKhoan();
-            if (loai != null && (loai.Equals("Bao mat", StringComparison.OrdinalIgnoreCase) || loai.Equals("Ky luat", StringComparison.OrdinalIgnoreCase)))
-            {
-                timThay = true;
+        var dsDKPhapLy = DatabaseMock.dsDieuKhoanHopDong
+            .Where(dk => !string.IsNullOrEmpty(dk.getLoaiDieuKhoan())
+                         && (dk.getLoaiDieuKhoan().Equals("Bao mat", StringComparison.OrdinalIgnoreCase)
+                             || dk.getLoaiDieuKhoan().Equals("Ky luat", StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
-                string soHD = "Mã HĐ: " + dk.getMaHopDong();
-                foreach (var hd in DatabaseMock.dsHopDong)
-                {
-                    if (hd.getMaHopDong() == dk.getMaHopDong())
-                    {
-                        soHD = hd.getSoHopDong();
-                        break;
-                    }
-                }
-
-                Console.WriteLine(string.Format("[{0}] - Điều {1} ({2}): {3}",
-                    dk.getLoaiDieuKhoan().ToUpper(),
-                    dk.getSoThuTuDieu(),
-                    soHD,
-                    dk.getTieuDeDieuKhoan()));
-                Console.WriteLine(string.Format("   -> Nội dung: {0}\n", dk.getNoiDungDieuKhoan()));
-            }
-        }
-
-        if (!timThay)
+        if (dsDKPhapLy.Count == 0)
         {
             Console.WriteLine("-> Không tìm thấy điều khoản bảo mật hoặc kỷ luật nào.");
+            return;
         }
+
+        dsDKPhapLy.ForEach(dk =>
+        {
+            string soHD = getSoHopDong(dk.getMaHopDong());
+            Console.WriteLine(string.Format("[{0}] - Điều {1} ({2}): {3}",
+                dk.getLoaiDieuKhoan().ToUpper(),
+                dk.getSoThuTuDieu(),
+                soHD,
+                dk.getTieuDeDieuKhoan()));
+            Console.WriteLine(string.Format("   -> Nội dung: {0}\n", dk.getNoiDungDieuKhoan()));
+        });
     }
 }
