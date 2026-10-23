@@ -1,36 +1,30 @@
-﻿using com.hrmis.data;
+using com.hrmis.dao;
 using com.hrmis.models;
 
 namespace com.hrmis.services;
 
 public class NhanSuService
 {
-    private string getTenPhongBan(int? maPhongBan)
-    {
-        var pb = DatabaseMock.dsPhongBan.FirstOrDefault(p => p.getmaPhongBan() != null && p.getmaPhongBan() == maPhongBan);
-        return pb?.gettenPhongBan() ?? "Chua phan bo";
-    }
+    private readonly NhanVienDAO nhanVienDAO = new();
+    private readonly PhongBanDAO phongBanDAO = new();
+    private readonly ChucVuDAO chucVuDAO = new();
+    private readonly NhomNhanVienDAO nhomNhanVienDAO = new();
+    private readonly ThanhVienNhomDAO thanhVienNhomDAO = new();
 
-    private string getTenChucVu(int? maChucVu)
-    {
-        var cv = DatabaseMock.dsChucVu.FirstOrDefault(c => c.getmaChucVu() != null && c.getmaChucVu() == maChucVu);
-        return cv?.gettenChucVu() ?? "Chua co";
-    }
+    private string getTenPhongBan(int? maPhongBan) =>
+        maPhongBan.HasValue ? phongBanDAO.GetTenPhongBan(maPhongBan.Value) : "Chưa phân bổ";
 
-    private string getTenNhanVien(int? maNhanVien)
-    {
-        var nv = DatabaseMock.dsNhanVien.FirstOrDefault(n => n.getMaNhanVien() == maNhanVien);
-        return nv?.HoTenNV() ?? "Khong xac dinh";
-    }
+    private string getTenChucVu(int? maChucVu) =>
+        maChucVu.HasValue ? chucVuDAO.GetTenChucVu(maChucVu.Value) : "Chưa có";
 
-    private string getTenNhom(int? maNhom)
-    {
-        var nh = DatabaseMock.dsNhomNhanVien.FirstOrDefault(n => n.getmaNhom() != null && n.getmaNhom() == maNhom);
-        return nh?.gettenNhom() ?? "Khong xac dinh";
-    }
+    private string getTenNhanVien(int? maNhanVien) =>
+        maNhanVien.HasValue ? (nhanVienDAO.GetById(maNhanVien.Value)?.HoTenNV() ?? "Không xác định") : "Không xác định";
+
+    private string getTenNhom(int? maNhom) =>
+        maNhom.HasValue ? nhomNhanVienDAO.GetTenNhom(maNhom.Value) : "Không xác định";
 
     // =============================================
-    // Câu 11 (Câu 1 Linh): Danh sách nhân viên
+    // Câu 11: Danh sách nhân viên
     // =============================================
     public void DanhSachNhanVien()
     {
@@ -38,15 +32,11 @@ public class NhanSuService
         Console.WriteLine(string.Format(formatHeader, "Ma NV", "Ho va Ten", "Gioi Tinh", "Phong Ban", "Chuc Vu", "Nguoi Quan Ly"));
         Console.WriteLine(new string('-', 110));
 
-        foreach (var nv in DatabaseMock.dsNhanVien)
+        nhanVienDAO.GetAll().ForEach(nv =>
         {
             string tenPhongBan = getTenPhongBan(nv.getMaPhongBan());
             string tenChucVu = getTenChucVu(nv.getMaChucVu());
-            string tenQuanLy = "Cap cao nhat";
-            if (nv.getMaQuanLy().HasValue)
-            {
-                tenQuanLy = getTenNhanVien(nv.getMaQuanLy().Value);
-            }
+            string tenQuanLy = nv.getMaQuanLy().HasValue ? getTenNhanVien(nv.getMaQuanLy().Value) : "Cap cao nhat";
 
             Console.WriteLine(string.Format(formatHeader,
                 nv.getMaNhanVien(),
@@ -55,11 +45,11 @@ public class NhanSuService
                 tenPhongBan,
                 tenChucVu,
                 tenQuanLy));
-        }
+        });
     }
 
     // =============================================
-    // Câu 12 (Câu 2 Linh): Cơ cấu tổ chức phòng ban
+    // Câu 12: Cơ cấu tổ chức phòng ban
     // =============================================
     public void danhSachPhongBan()
     {
@@ -67,26 +57,23 @@ public class NhanSuService
         Console.WriteLine(string.Format("{0,-20} {1,-25} {2,-10}", "Phong ban", "Truong phong", "So NV"));
         Console.WriteLine(new string('-', 60));
 
-        foreach (var pb in DatabaseMock.dsPhongBan)
+        phongBanDAO.GetAll().ForEach(pb =>
         {
-            string truongPhong = "Chua co";
-            if (pb.getmaTruongPhong().HasValue)
-            {
-                var tp = DatabaseMock.dsNhanVien.FirstOrDefault(nv => nv.getMaNhanVien() == pb.getmaTruongPhong().Value);
-                if (tp != null) truongPhong = tp.HoTenNV();
-            }
+            string truongPhong = pb.getmaTruongPhong().HasValue
+                ? getTenNhanVien(pb.getmaTruongPhong().Value)
+                : "Chua co";
 
-            long soNhanVien = DatabaseMock.dsNhanVien.Count(nv => nv.getMaPhongBan() == pb.getmaPhongBan());
+            int soNhanVien = nhanVienDAO.GetByPhongBan(pb.getmaPhongBan() ?? 0).Count;
 
             Console.WriteLine(string.Format("{0,-20} {1,-25} {2,-10}",
                 pb.gettenPhongBan(),
                 truongPhong,
                 soNhanVien));
-        }
+        });
     }
 
     // =============================================
-    // Câu 13 (Câu 3 Linh): Tra cứu nhân viên theo phòng ban
+    // Câu 13: Tra cứu nhân viên theo phòng ban
     // =============================================
     public void traCuuNhanVienTheoPhongBan(string maHoacTenPhongBan)
     {
@@ -97,10 +84,10 @@ public class NhanSuService
         }
 
         string keyword = maHoacTenPhongBan.Trim().ToLower();
-        var dsKetQua = DatabaseMock.dsNhanVien.Where(nv =>
-            nv.getMaPhongBan().ToString().ToLower().Equals(keyword) ||
-            getTenPhongBan(nv.getMaPhongBan()).ToLower().Contains(keyword)
-        ).ToList();
+        var dsKetQua = nhanVienDAO.GetAll()
+            .Where(nv => nv.getMaPhongBan().ToString().Equals(keyword, StringComparison.OrdinalIgnoreCase)
+                      || getTenPhongBan(nv.getMaPhongBan()).ToLower().Contains(keyword))
+            .ToList();
 
         Console.WriteLine("\n=== Danh sach nhan vien thuoc phong ban ===");
         if (dsKetQua.Count == 0)
@@ -109,63 +96,60 @@ public class NhanSuService
             return;
         }
 
-        foreach (var nv in dsKetQua)
+        dsKetQua.ForEach(nv =>
         {
             Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {getTenChucVu(nv.getMaChucVu())} | {getTenPhongBan(nv.getMaPhongBan())}");
-        }
+        });
     }
 
     // =============================================
-    // Câu 14 (Câu 4 Linh): Top 3 nhân viên thâm niên
+    // Câu 14: Top 3 nhân viên thâm niên
     // =============================================
     public void top3NhanVienThamNien()
     {
         Console.WriteLine("\n=== Top 3 nhan vien co ngay vao lam som nhat ===");
 
-        var top3 = DatabaseMock.dsNhanVien.OrderBy(nv => nv.getNgayVaoLam()).Take(3);
-        foreach (var nv in top3)
+        nhanVienDAO.GetTopThamNien(3).ForEach(nv =>
         {
             Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {nv.getNgayVaoLam()}");
-        }
+        });
     }
 
     // =============================================
-    // Câu 15 (Câu 5 Linh): Cây phân cấp quản lý
+    // Câu 15: Cây phân cấp quản lý
     // =============================================
     public void danhSachCapDuoiCuaQuanLy(int maNhanVienQuanLy)
     {
         Console.WriteLine($"\n=== Danh sach cap duoi cua quan ly {maNhanVienQuanLy} ===");
 
-        var dsCapDuoi = DatabaseMock.dsNhanVien.Where(nv => nv.getMaQuanLy().HasValue && nv.getMaQuanLy().Value == maNhanVienQuanLy).ToList();
-
+        var dsCapDuoi = nhanVienDAO.GetCapDuoi(maNhanVienQuanLy);
         if (dsCapDuoi.Count == 0)
         {
             Console.WriteLine("Khong co cap duoi nao.");
             return;
         }
 
-        foreach (var nv in dsCapDuoi)
+        dsCapDuoi.ForEach(nv =>
         {
             Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {getTenChucVu(nv.getMaChucVu())}");
-        }
+        });
     }
 
     // =============================================
-    // Câu 16 (Câu 6 Linh): Chi tiết một nhóm làm việc
+    // Câu 16: Chi tiết nhóm nhân viên
     // =============================================
     public void chiTietNhomNhanVien(int maNhom)
     {
         Console.WriteLine("\n=== Chi tiet nhom lam viec ===");
 
-        var nhom = DatabaseMock.dsNhomNhanVien.FirstOrDefault(nh => nh.getmaNhom().HasValue && nh.getmaNhom().Value == maNhom);
-
+        var nhom = nhomNhanVienDAO.GetById(maNhom);
         if (nhom == null)
         {
             Console.WriteLine("Khong tim thay nhom.");
             return;
         }
 
-        string truongNhom = getTenNhanVien(nhom.getmaTruongNhom());
+        string truongNhom = nhom.getmaTruongNhom().HasValue ? getTenNhanVien(nhom.getmaTruongNhom().Value) : "Chưa có";
         Console.WriteLine("Ma nhom: " + nhom.getmaNhom());
         Console.WriteLine("Ten nhom: " + nhom.gettenNhom());
         Console.WriteLine("Truong nhom: " + truongNhom);
@@ -173,63 +157,65 @@ public class NhanSuService
         Console.WriteLine("Mo ta: " + nhom.ToString());
 
         Console.WriteLine("\nDanh sach thanh vien:");
-        var thanhVienList = DatabaseMock.dsThanhVienNhom.Where(tv => tv.getmaNhom().HasValue && tv.getmaNhom().Value == maNhom).ToList();
-        foreach (var tv in thanhVienList)
+        thanhVienNhomDAO.GetByNhom(maNhom).ForEach(tv =>
         {
-            var nv = DatabaseMock.dsNhanVien.FirstOrDefault(n => n.getMaNhanVien() == tv.getnhomNhanVien());
+            var nv = nhanVienDAO.GetById(tv.getnhomNhanVien());
             if (nv != null)
             {
                 Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {tv.getVaiTro()}");
             }
-        }
+        });
     }
 
     // =============================================
-    // Câu 17 (Câu 7 Linh): Thống kê nhân sự đa nhiệm
+    // Câu 17: Thống kê nhân sự đa nhiệm
     // =============================================
     public void thongKeNhanVienDaNhiemNhieuNhom()
     {
         Console.WriteLine("\n=== Danh sach nhan vien tham gia tu 2 nhom tro len ===");
 
-        var dsTheoNhanVien = DatabaseMock.dsThanhVienNhom.GroupBy(tv => tv.getnhomNhanVien());
+        var dsTheoNhanVien = thanhVienNhomDAO.GetAll()
+            .GroupBy(tv => tv.getnhomNhanVien())
+            .Where(g => g.Count() >= 2)
+            .ToList();
 
-        foreach (var entry in dsTheoNhanVien.Where(g => g.Count() >= 2))
+        dsTheoNhanVien.ForEach(entry =>
         {
-            var nv = DatabaseMock.dsNhanVien.FirstOrDefault(n => n.getMaNhanVien() == entry.Key);
+            var nv = nhanVienDAO.GetById(entry.Key);
             if (nv != null)
             {
-                string dsNhom = string.Join(", ", entry.Select(tv => tv.getmaNhom().HasValue ? getTenNhom(tv.getmaNhom().Value) : ""));
+                string dsNhom = string.Join(", ", entry.Select(tv => getTenNhom(tv.getmaNhom())));
                 Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {dsNhom}");
             }
-        }
+        });
     }
 
     // =============================================
-    // Câu 18 (Câu 8 Linh): Phân bổ nhân sự theo chức danh
+    // Câu 18: Phân bổ nhân sự theo chức danh
     // =============================================
     public void thongKeNhanSuTheoChucVu()
     {
         Console.WriteLine("\n=== Thong ke nhan su theo chuc vu ===");
 
-        foreach (var cv in DatabaseMock.dsChucVu)
+        chucVuDAO.GetAll().ForEach(cv =>
         {
-            long soLuong = DatabaseMock.dsNhanVien.Count(nv => nv.getMaChucVu() == cv.getmaChucVu());
+            int soLuong = nhanVienDAO.GetByChucVu(cv.getmaChucVu() ?? 0).Count;
             if (soLuong > 0)
             {
                 Console.WriteLine($"- {cv.gettenChucVu()}: {soLuong}");
             }
-        }
+        });
     }
 
     // =============================================
-    // Câu 19 (Câu 9 Linh): Nhân viên chưa vào nhóm
+    // Câu 19: Nhân viên chưa vào nhóm
     // =============================================
     public void danhSachNhanVienChuaVaoNhom()
     {
         Console.WriteLine("\n=== Danh sach nhan vien chua tham gia nhom nao ===");
 
-        var dsChuaVaoNhom = DatabaseMock.dsNhanVien
-            .Where(nv => !DatabaseMock.dsThanhVienNhom.Any(tv => tv.getnhomNhanVien() == nv.getMaNhanVien()))
+        var dsChuaVaoNhom = nhanVienDAO.GetAll()
+            .Where(nv => thanhVienNhomDAO.GetByNhanVien(nv.getMaNhanVien()).Count == 0)
             .ToList();
 
         if (dsChuaVaoNhom.Count == 0)
@@ -238,14 +224,14 @@ public class NhanSuService
             return;
         }
 
-        foreach (var nv in dsChuaVaoNhom)
+        dsChuaVaoNhom.ForEach(nv =>
         {
             Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {getTenPhongBan(nv.getMaPhongBan())}");
-        }
+        });
     }
 
     // =============================================
-    // Câu 20 (Câu 10 Linh): Tìm kiếm nhân sự đa tiêu chí
+    // Câu 20: Tìm kiếm nhân sự đa tiêu chí
     // =============================================
     public void timNhanSuTheoTuKhoa(string keyword)
     {
@@ -255,13 +241,7 @@ public class NhanSuService
             return;
         }
 
-        string key = keyword.Trim().ToLower();
-        var dsKetQua = DatabaseMock.dsNhanVien.Where(nv =>
-            nv.HoTenNV().ToLower().Contains(key) ||
-            nv.getSoDienThoai().ToLower().Contains(key) ||
-            nv.getEmail().ToLower().Contains(key)
-        ).ToList();
-
+        var dsKetQua = nhanVienDAO.Search(keyword);
         Console.WriteLine("\n=== Ket qua tim kiem nhan su ===");
         if (dsKetQua.Count == 0)
         {
@@ -269,9 +249,9 @@ public class NhanSuService
             return;
         }
 
-        foreach (var nv in dsKetQua)
+        dsKetQua.ForEach(nv =>
         {
             Console.WriteLine($"- {nv.getMaNhanVien()} | {nv.HoTenNV()} | {nv.getSoDienThoai()} | {nv.getEmail()} | {getTenPhongBan(nv.getMaPhongBan())}");
-        }
+        });
     }
 }

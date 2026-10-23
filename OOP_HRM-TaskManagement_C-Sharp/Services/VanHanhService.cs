@@ -1,4 +1,4 @@
-﻿using com.hrmis.data;
+using com.hrmis.dao;
 using com.hrmis.enums;
 using com.hrmis.models;
 
@@ -6,24 +6,24 @@ namespace com.hrmis.services;
 
 public class VanHanhService
 {
-    // Helper: Tìm tên nhân viên theo mã (LINQ + Lambda)
+    private readonly HopDongDAO hopDongDAO = new();
+    private readonly DieuKhoanHopDongDAO dieuKhoanDAO = new();
+    private readonly ChamCongDAO chamCongDAO = new();
+    private readonly DonXinNghiDAO donXinNghiDAO = new();
+    private readonly NhanVienDAO nhanVienDAO = new();
+    private readonly CaLamViecDAO caLamViecDAO = new();
+
     private string getTenNhanVien(int maNV)
     {
-        var nv = DatabaseMock.dsNhanVien.FirstOrDefault(n => n.getMaNhanVien() == maNV);
+        var nv = nhanVienDAO.GetById(maNV);
         return nv != null ? nv.HoTenNV() : "Mã " + maNV;
     }
 
-    // Helper: Tìm tên ca làm việc theo mã (LINQ + Lambda)
-    private string getTenCa(int maCa)
-    {
-        var ca = DatabaseMock.dsCaLamViec.FirstOrDefault(c => c.getMaCa() == maCa);
-        return ca != null ? ca.getTenCa() : "Ca " + maCa;
-    }
+    private string getTenCa(int maCa) => caLamViecDAO.GetTenCa(maCa);
 
-    // Helper: Tìm số hợp đồng theo mã hợp đồng (LINQ + Lambda)
     private string getSoHopDong(int maHopDong)
     {
-        var hd = DatabaseMock.dsHopDong.FirstOrDefault(h => h.getMaHopDong() == maHopDong);
+        var hd = hopDongDAO.GetById(maHopDong);
         return hd != null ? hd.getSoHopDong() : "Mã HĐ: " + maHopDong;
     }
 
@@ -32,27 +32,26 @@ public class VanHanhService
     // =========================================================================
     public void inHopDongChiTiet(int maHopDong)
     {
-        var hd = DatabaseMock.dsHopDong.FirstOrDefault(h => h.getMaHopDong() == maHopDong);
+        var hd = hopDongDAO.GetById(maHopDong);
         if (hd == null)
         {
             Console.WriteLine("Không tìm thấy hợp đồng có mã: " + maHopDong);
             return;
         }
 
-        string tenNV = $"{getTenNhanVien(hd.getMaNhanVien())} (Mã {hd.getMaNhanVien()})";
-
-        Console.WriteLine("==============================================================================");
+        string tenNV = getTenNhanVien(hd.getMaNhanVien()) + " (Mã " + hd.getMaNhanVien() + ")";
+        Console.WriteLine(new string('=', 78));
         Console.WriteLine("CHI TIẾT HỢP ĐỒNG LAO ĐỘNG: " + hd.getSoHopDong());
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
         Console.WriteLine($"Nhân viên ký kết : {tenNV}");
         Console.WriteLine($"Loại hợp đồng    : {hd.getLoaiHopDong()}");
         Console.WriteLine($"Thời hạn         : {hd.getNgayHieuLuc()} -> {(hd.getNgayHetHan().HasValue ? hd.getNgayHetHan().Value.ToString() : "Vô thời hạn")}");
-        Console.WriteLine(string.Format("Lương thỏa thuận : {0:N0} VNĐ", hd.getLuongThoaThuan()));
+        Console.WriteLine($"Lương thỏa thuận : {hd.getLuongThoaThuan():N0} VNĐ");
         Console.WriteLine($"Trạng thái       : {hd.getTrangThai()}");
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('-', 78));
         Console.WriteLine("CÁC ĐIỀU KHOẢN ĐIỀU KIỆN KÈM THEO:");
 
-        var dsDK = DatabaseMock.dsDieuKhoanHopDong.Where(dk => dk.getMaHopDong() == maHopDong).ToList();
+        var dsDK = dieuKhoanDAO.GetByHopDong(maHopDong);
         if (dsDK.Count == 0)
         {
             Console.WriteLine("  (Hợp đồng không có điều khoản phụ kèm theo)");
@@ -61,31 +60,24 @@ public class VanHanhService
         {
             dsDK.ForEach(dk =>
             {
-                Console.WriteLine(string.Format("  [Điều {0}] {1,-25} ({2})", dk.getSoThuTuDieu(), dk.getTieuDeDieuKhoan(), dk.getLoaiDieuKhoan()));
+                Console.WriteLine($"  [Điều {dk.getSoThuTuDieu()}] {dk.getTieuDeDieuKhoan(),-25} ({dk.getLoaiDieuKhoan()})");
                 Console.WriteLine($"          -> {dk.getNoiDungDieuKhoan()}");
             });
         }
     }
 
     // =========================================================================
-    // CÂU 2: Cảnh báo hợp đồng sắp hết hạn trong vòng 30 ngày
+    // CÂU 2: Cảnh báo hợp đồng sắp hết hạn trong 30 ngày
     // =========================================================================
     public void canhBaoHopDongSapHetHan(DateOnly mocThoiGian)
     {
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine("CẢNH BÁO HỢP ĐỒNG SẮP HẾT HẠN (30 NGÀY TỪ " + mocThoiGian + ")");
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-14} {1,-8} {2,-22} {3,-18} {4}", "Số HĐ", "Mã NV", "Họ và tên", "Loại hợp đồng", "Ngày hết hạn"));
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"CẢNH BÁO HỢP ĐỒNG SẮP HẾT HẠN (30 NGÀY TỪ {mocThoiGian})");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Số HĐ",-14} {"Mã NV",-8} {"Họ và tên",-22} {"Loại hợp đồng",-18} {"Ngày hết hạn"}");
+        Console.WriteLine(new string('-', 78));
 
-        DateOnly moc30NgaySau = mocThoiGian.AddDays(30);
-
-        var dsSapHetHan = DatabaseMock.dsHopDong
-            .Where(hd => hd.getNgayHetHan().HasValue
-                         && hd.getNgayHetHan().Value >= mocThoiGian
-                         && hd.getNgayHetHan().Value <= moc30NgaySau)
-            .ToList();
-
+        var dsSapHetHan = hopDongDAO.GetSapHetHan(mocThoiGian, 30);
         if (dsSapHetHan.Count == 0)
         {
             Console.WriteLine("-> Không có hợp đồng nào sắp hết hạn trong 30 ngày tới.");
@@ -95,30 +87,23 @@ public class VanHanhService
         dsSapHetHan.ForEach(hd =>
         {
             string hoTen = getTenNhanVien(hd.getMaNhanVien());
-            Console.WriteLine(string.Format("{0,-14} {1,-8} {2,-22} {3,-18} {4}",
-                hd.getSoHopDong(), hd.getMaNhanVien(), hoTen, hd.getLoaiHopDong(), hd.getNgayHetHan()));
+            Console.WriteLine($"{hd.getSoHopDong(),-14} {hd.getMaNhanVien(),-8} {hoTen,-22} {hd.getLoaiHopDong(),-18} {hd.getNgayHetHan()}");
         });
     }
 
     // =========================================================================
-    // CÂU 3: Bảng chấm công cá nhân theo tháng/năm
+    // CÂU 3: Bảng chấm công cá nhân
     // =========================================================================
     public void inBangChamCongCaNhan(int maNhanVien, int thang, int nam)
     {
         string hoTen = getTenNhanVien(maNhanVien);
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"BẢNG CHẤM CÔNG NHÂN VIÊN: {hoTen} (Mã {maNhanVien}) - THÁNG {thang:D2}/{nam}");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Ngày",-12} {"Ca làm việc",-18} {"Giờ vào",-10} {"Giờ ra",-10} {"Số giờ làm",-12} {"Trạng thái"}");
+        Console.WriteLine(new string('-', 78));
 
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("BẢNG CHẤM CÔNG NHÂN VIÊN: {0} (Mã {1}) - THÁNG {2:D2}/{3}", hoTen, maNhanVien, thang, nam));
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-12} {1,-18} {2,-10} {3,-10} {4,-12} {5}", "Ngày", "Ca làm việc", "Giờ vào", "Giờ ra", "Số giờ làm", "Trạng thái"));
-        Console.WriteLine("------------------------------------------------------------------------------");
-
-        var dsCong = DatabaseMock.dsChamCong
-            .Where(cc => cc.getMaNhanVien() == maNhanVien
-                         && cc.getNgayLamViec().Month == thang
-                         && cc.getNgayLamViec().Year == nam)
-            .ToList();
-
+        var dsCong = chamCongDAO.GetByNhanVienVaThang(maNhanVien, thang, nam);
         if (dsCong.Count == 0)
         {
             Console.WriteLine("-> Không tìm thấy dữ liệu chấm công trong tháng này.");
@@ -128,59 +113,29 @@ public class VanHanhService
         dsCong.ForEach(cc =>
         {
             string tenCa = getTenCa(cc.getMaCa());
-            double soGioLam = 0.0;
-            if (cc.getGioVaoThucTe().HasValue && cc.getGioRaThucTe().HasValue)
-            {
-                var timeIn = cc.getGioVaoThucTe().Value.ToTimeSpan();
-                var timeOut = cc.getGioRaThucTe().Value.ToTimeSpan();
-                soGioLam = (timeOut - timeIn).TotalHours;
-            }
+            double soGioLam = (cc.getGioVaoThucTe().HasValue && cc.getGioRaThucTe().HasValue)
+                ? (cc.getGioRaThucTe().Value.ToTimeSpan() - cc.getGioVaoThucTe().Value.ToTimeSpan()).TotalHours
+                : 0.0;
 
-            Console.WriteLine(string.Format("{0,-12} {1,-18} {2,-10} {3,-10} {4,-12} {5}",
-                cc.getNgayLamViec(),
-                tenCa,
-                cc.getGioVaoThucTe(),
-                cc.getGioRaThucTe(),
-                string.Format("{0:F1} giờ", soGioLam),
-                cc.getTrangThaiCong()));
+            Console.WriteLine($"{cc.getNgayLamViec(),-12} {tenCa,-18} {cc.getGioVaoThucTe(),-10} {cc.getGioRaThucTe(),-10} {$"{soGioLam:F1} giờ",-12} {cc.getTrangThaiCong()}");
         });
     }
 
     // =========================================================================
-    // CÂU 4: Báo cáo đi trễ trong tháng (sắp xếp giảm dần theo số lần vi phạm)
+    // CÂU 4: Báo cáo đi trễ trong tháng
     // =========================================================================
-    public class ThongKeDiTre
-    {
-        public int maNV;
-        public string hoTen;
-        public int soLan;
-
-        public ThongKeDiTre(int maNV, string hoTen, int soLan)
-        {
-            this.maNV = maNV;
-            this.hoTen = hoTen;
-            this.soLan = soLan;
-        }
-    }
+    public record ThongKeDiTre(int maNV, string hoTen, int soLan);
 
     public void baocaoDiTre(int thang, int nam)
     {
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("BÁO CÁO NHÂN VIÊN ĐI TRỄ - THÁNG {0:D2}/{1}", thang, nam));
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3}", "Hạng", "Mã NV", "Họ và tên", "Số lần đi trễ"));
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"BÁO CÁO NHÂN VIÊN ĐI TRỄ - THÁNG {thang:D2}/{nam}");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Hạng",-6} {"Mã NV",-8} {"Họ và tên",-25} {"Số lần đi trễ"}");
+        Console.WriteLine(new string('-', 78));
 
-        var danhSach = DatabaseMock.dsNhanVien
-            .Select(nv =>
-            {
-                int soLanTre = DatabaseMock.dsChamCong.Count(cc =>
-                    cc.getMaNhanVien() == nv.getMaNhanVien()
-                    && cc.getNgayLamViec().Month == thang
-                    && cc.getNgayLamViec().Year == nam
-                    && cc.getTrangThaiCong() == TrangThaiCong.DI_TRE);
-                return new ThongKeDiTre(nv.getMaNhanVien(), nv.HoTenNV(), soLanTre);
-            })
+        var danhSach = nhanVienDAO.GetAll()
+            .Select(nv => new ThongKeDiTre(nv.getMaNhanVien(), nv.HoTenNV(), chamCongDAO.CountDiTre(nv.getMaNhanVien(), thang, nam)))
             .Where(tk => tk.soLan > 0)
             .OrderByDescending(tk => tk.soLan)
             .ToList();
@@ -192,45 +147,24 @@ public class VanHanhService
         }
 
         int rank = 1;
-        danhSach.ForEach(tk =>
-            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3} lần", rank++, tk.maNV, tk.hoTen, tk.soLan)));
+        danhSach.ForEach(tk => Console.WriteLine($"{rank++,-6} {tk.maNV,-8} {tk.hoTen,-25} {tk.soLan} lần"));
     }
 
     // =========================================================================
-    // CÂU 5: Báo cáo nhân viên làm thêm giờ (OT) trong tháng
+    // CÂU 5: Báo cáo làm thêm giờ OT
     // =========================================================================
-    public class ThongKeOT
-    {
-        public int maNV;
-        public string hoTen;
-        public double soGio;
-
-        public ThongKeOT(int maNV, string hoTen, double soGio)
-        {
-            this.maNV = maNV;
-            this.hoTen = hoTen;
-            this.soGio = soGio;
-        }
-    }
+    public record ThongKeOT(int maNV, string hoTen, double soGio);
 
     public void baocaoOT(int thang, int nam)
     {
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("BÁO CÁO TOP NHÂN VIÊN LÀM THÊM GIỜ (OT) - THÁNG {0:D2}/{1}", thang, nam));
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3}", "Hạng", "Mã NV", "Họ và tên", "Tổng số giờ OT"));
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"BÁO CÁO TOP NHÂN VIÊN LÀM THÊM GIỜ (OT) - THÁNG {thang:D2}/{nam}");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Hạng",-6} {"Mã NV",-8} {"Họ và tên",-25} {"Tổng số giờ OT"}");
+        Console.WriteLine(new string('-', 78));
 
-        var danhSach = DatabaseMock.dsNhanVien
-            .Select(nv =>
-            {
-                double soGio = DatabaseMock.dsChamCong
-                    .Where(cc => cc.getMaNhanVien() == nv.getMaNhanVien()
-                                 && cc.getNgayLamViec().Month == thang
-                                 && cc.getNgayLamViec().Year == nam)
-                    .Sum(cc => cc.getSoGioLamThem());
-                return new ThongKeOT(nv.getMaNhanVien(), nv.HoTenNV(), soGio);
-            })
+        var danhSach = nhanVienDAO.GetAll()
+            .Select(nv => new ThongKeOT(nv.getMaNhanVien(), nv.HoTenNV(), chamCongDAO.SumGioOT(nv.getMaNhanVien(), thang, nam)))
             .Where(tk => tk.soGio > 0)
             .OrderByDescending(tk => tk.soGio)
             .ToList();
@@ -242,8 +176,7 @@ public class VanHanhService
         }
 
         int rank = 1;
-        danhSach.ForEach(tk =>
-            Console.WriteLine(string.Format("{0,-6} {1,-8} {2,-25} {3:F1} giờ", rank++, tk.maNV, tk.hoTen, tk.soGio)));
+        danhSach.ForEach(tk => Console.WriteLine($"{rank++,-6} {tk.maNV,-8} {tk.hoTen,-25} {tk.soGio:F1} giờ"));
     }
 
     // =========================================================================
@@ -251,16 +184,13 @@ public class VanHanhService
     // =========================================================================
     public void theoDoiDonNghiPhep()
     {
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
         Console.WriteLine("DANH SÁCH ĐƠN NGHỈ PHÉP ĐANG CHỜ DUYỆT");
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-8} {1,-22} {2,-16} {3,-10} {4,-24} {5}", "Mã đơn", "Người nộp", "Loại nghỉ", "Số ngày", "Thời gian", "Người duyệt"));
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Mã đơn",-8} {"Người nộp",-22} {"Loại nghỉ",-16} {"Số ngày",-10} {"Thời gian",-24} {"Người duyệt"}");
+        Console.WriteLine(new string('-', 78));
 
-        var dsChoDuyet = DatabaseMock.dsDonXinNghi
-            .Where(don => don.getTrangThaiDuyet() == TrangThaiDuyet.CHO_DUYET)
-            .ToList();
-
+        var dsChoDuyet = donXinNghiDAO.GetChoDuyet();
         if (dsChoDuyet.Count == 0)
         {
             Console.WriteLine("-> Hiện không có đơn xin nghỉ phép nào đang chờ duyệt.");
@@ -271,11 +201,9 @@ public class VanHanhService
         {
             string tenNguoiNop = getTenNhanVien(don.getMaNhanVien());
             string tenNguoiDuyet = don.getNguoiDuyet().HasValue ? getTenNhanVien(don.getNguoiDuyet().Value) : "Chưa chỉ định";
-            long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
+            int soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
             string thoiGian = $"{don.getNgayBatDau()} -> {don.getNgayKetThuc()}";
-
-            Console.WriteLine(string.Format("{0,-8} {1,-22} {2,-16} {3,-10} {4,-24} {5}",
-                don.getMaDonNghi(), tenNguoiNop, don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, tenNguoiDuyet));
+            Console.WriteLine($"{don.getMaDonNghi(),-8} {tenNguoiNop,-22} {don.getLoaiNghi(),-16} {$"{soNgayNghi} ngày",-10} {thoiGian,-24} {tenNguoiDuyet}");
         });
     }
 
@@ -284,23 +212,21 @@ public class VanHanhService
     // =========================================================================
     public void lsNghi(int maNV)
     {
-        bool timThayNV = DatabaseMock.dsNhanVien.Any(nv => nv.getMaNhanVien() == maNV);
-        if (!timThayNV)
+        var nv = nhanVienDAO.GetById(maNV);
+        if (nv == null)
         {
             Console.WriteLine("Không tìm thấy nhân viên có mã: " + maNV);
             return;
         }
 
-        string hoTen = getTenNhanVien(maNV);
+        string hoTen = nv.HoTenNV();
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"LỊCH SỬ NGHỈ PHÉP: {hoTen} (Mã {maNV})");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Mã đơn",-8} {"Loại nghỉ",-16} {"Số ngày",-10} {"Thời gian",-25} {"Trạng thái",-14} {"Lý do"}");
+        Console.WriteLine(new string('-', 78));
 
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("LỊCH SỬ NGHỈ PHÉP: {0} (Mã {1})", hoTen, maNV));
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-8} {1,-16} {2,-10} {3,-25} {4,-14} {5}", "Mã đơn", "Loại nghỉ", "Số ngày", "Thời gian", "Trạng thái", "Lý do"));
-        Console.WriteLine("------------------------------------------------------------------------------");
-
-        var dsNghi = DatabaseMock.dsDonXinNghi.Where(don => don.getMaNhanVien() == maNV).ToList();
-
+        var dsNghi = donXinNghiDAO.GetByNhanVien(maNV);
         if (dsNghi.Count == 0)
         {
             Console.WriteLine("-> Nhân viên chưa có đơn xin nghỉ phép nào.");
@@ -309,39 +235,25 @@ public class VanHanhService
 
         dsNghi.ForEach(don =>
         {
-            long soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
+            int soNgayNghi = don.getNgayKetThuc().DayNumber - don.getNgayBatDau().DayNumber + 1;
             string thoiGian = $"{don.getNgayBatDau()} -> {don.getNgayKetThuc()}";
-
-            Console.WriteLine(string.Format("{0,-8} {1,-16} {2,-10} {3,-25} {4,-14} {5}",
-                don.getMaDonNghi(), don.getLoaiNghi(), soNgayNghi + " ngày", thoiGian, don.getTrangThaiDuyet(), don.getLyDo()));
+            Console.WriteLine($"{don.getMaDonNghi(),-8} {don.getLoaiNghi(),-16} {$"{soNgayNghi} ngày",-10} {thoiGian,-25} {don.getTrangThaiDuyet(),-14} {don.getLyDo()}");
         });
     }
 
     // =========================================================================
-    // CÂU 8: Thống kê nhân viên đạt chuyên cần 100% trong tháng
+    // CÂU 8: Thống kê nhân viên đạt chuyên cần 100%
     // =========================================================================
     public void thongkeChuyenCan(int thang, int nam)
     {
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("DANH SÁCH NHÂN VIÊN ĐẠT CHUYÊN CẦN 100% - THÁNG {0:D2}/{1}", thang, nam));
-        Console.WriteLine("==============================================================================");
-        Console.WriteLine(string.Format("{0,-8} {1,-25} {2,-18} {3}", "Mã NV", "Họ và tên", "Số ngày công", "Tỷ lệ đúng giờ"));
-        Console.WriteLine("------------------------------------------------------------------------------");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"DANH SÁCH NHÂN VIÊN ĐẠT CHUYÊN CẦN 100% - THÁNG {thang:D2}/{nam}");
+        Console.WriteLine(new string('=', 78));
+        Console.WriteLine($"{"Mã NV",-8} {"Họ và tên",-25} {"Số ngày công",-18} {"Tỷ lệ đúng giờ"}");
+        Console.WriteLine(new string('-', 78));
 
-        var dsChuyenCan = DatabaseMock.dsNhanVien
-            .Where(nv =>
-            {
-                int tongCong = DatabaseMock.dsChamCong.Count(cc =>
-                    cc.getMaNhanVien() == nv.getMaNhanVien()
-                    && cc.getNgayLamViec().Month == thang
-                    && cc.getNgayLamViec().Year == nam);
-                int dungGio = DatabaseMock.dsChamCong.Count(cc =>
-                    cc.getMaNhanVien() == nv.getMaNhanVien()
-                    && cc.getNgayLamViec().Month == thang
-                    && cc.getNgayLamViec().Year == nam
-                    && cc.getTrangThaiCong() == TrangThaiCong.DUNG_GIO);
-                return tongCong > 0 && tongCong == dungGio;
-            })
+        var dsChuyenCan = nhanVienDAO.GetAll()
+            .Where(nv => chamCongDAO.IsChuyenCan100PhanTram(nv.getMaNhanVien(), thang, nam))
             .ToList();
 
         if (dsChuyenCan.Count == 0)
@@ -352,66 +264,50 @@ public class VanHanhService
 
         dsChuyenCan.ForEach(nv =>
         {
-            int tongCong = DatabaseMock.dsChamCong.Count(cc =>
-                cc.getMaNhanVien() == nv.getMaNhanVien()
-                && cc.getNgayLamViec().Month == thang
-                && cc.getNgayLamViec().Year == nam);
-            Console.WriteLine(string.Format("{0,-8} {1,-25} {2,-18} {3}",
-                nv.getMaNhanVien(),
-                nv.HoTenNV(),
-                tongCong + "/" + tongCong + " ngày",
-                "100%"));
+            int tongCong = chamCongDAO.GetByNhanVienVaThang(nv.getMaNhanVien(), thang, nam).Count;
+            Console.WriteLine($"{nv.getMaNhanVien(),-8} {nv.HoTenNV(),-25} {$"{tongCong}/{tongCong} ngày",-18} {"100%"}");
         });
     }
 
     // =========================================================================
-    // CÂU 9: Thống kê số lượng nhân viên theo từng loại hợp đồng lao động
+    // CÂU 9: Thống kê số lượng nhân sự theo từng loại hợp đồng
     // =========================================================================
     public void thongkeHopDong()
     {
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
         Console.WriteLine("THỐNG KÊ NHÂN SỰ THEO TỪNG LOẠI HỢP ĐỒNG LAO ĐỘNG");
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
 
-        Enum.GetValues<LoaiHopDong>().ToList().ForEach(lhd =>
+        foreach (LoaiHopDong lhd in Enum.GetValues<LoaiHopDong>())
         {
-            var dsHDTheoLoai = DatabaseMock.dsHopDong
-                .Where(hd => hd.getLoaiHopDong() == lhd && hd.getTrangThai() != TrangThaiHopDong.DA_HET_HAN)
+            var dsHDTheoLoai = hopDongDAO.GetByLoai(lhd)
+                .Where(hd => hd.getTrangThai() != TrangThaiHopDong.DA_HET_HAN)
                 .ToList();
 
-            Console.WriteLine(string.Format("\n>> LOẠI HỢP ĐỒNG: {0} ({1} nhân viên)", lhd, dsHDTheoLoai.Count));
+            Console.WriteLine($"\n>> LOẠI HỢP ĐỒNG: {lhd} ({dsHDTheoLoai.Count} nhân viên)");
             if (dsHDTheoLoai.Count > 0)
             {
-                Console.WriteLine(string.Format("   {0,-8} {1,-22} {2,-15} {3}", "Mã NV", "Họ và tên", "Số hợp đồng", "Trạng thái HĐ"));
-                Console.WriteLine("   --------------------------------------------------------------------------");
+                Console.WriteLine($"   {"Mã NV",-8} {"Họ và tên",-22} {"Số hợp đồng",-15} {"Trạng thái HĐ"}");
+                Console.WriteLine("   " + new string('-', 74));
                 dsHDTheoLoai.ForEach(hd =>
                 {
                     string hoTen = getTenNhanVien(hd.getMaNhanVien());
-                    Console.WriteLine(string.Format("   {0,-8} {1,-22} {2,-15} {3}",
-                        hd.getMaNhanVien(),
-                        hoTen,
-                        hd.getSoHopDong(),
-                        hd.getTrangThai()));
+                    Console.WriteLine($"   {hd.getMaNhanVien(),-8} {hoTen,-22} {hd.getSoHopDong(),-15} {hd.getTrangThai()}");
                 });
             }
-        });
+        }
     }
 
     // =========================================================================
-    // CÂU 10: Lọc các điều khoản pháp lý (Bảo mật hoặc Kỷ luật) trên hệ thống
+    // CÂU 10: Lọc các điều khoản pháp lý
     // =========================================================================
     public void locDieuKhoanPhapLy()
     {
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
         Console.WriteLine("DANH SÁCH ĐIỀU KHOẢN PHÁP LÝ (BẢO MẬT & KỶ LUẬT)");
-        Console.WriteLine("==============================================================================");
+        Console.WriteLine(new string('=', 78));
 
-        var dsDKPhapLy = DatabaseMock.dsDieuKhoanHopDong
-            .Where(dk => !string.IsNullOrEmpty(dk.getLoaiDieuKhoan())
-                         && (dk.getLoaiDieuKhoan().Equals("Bao mat", StringComparison.OrdinalIgnoreCase)
-                             || dk.getLoaiDieuKhoan().Equals("Ky luat", StringComparison.OrdinalIgnoreCase)))
-            .ToList();
-
+        var dsDKPhapLy = dieuKhoanDAO.GetByLoaiDieuKhoan("Bao mat", "Ky luat");
         if (dsDKPhapLy.Count == 0)
         {
             Console.WriteLine("-> Không tìm thấy điều khoản bảo mật hoặc kỷ luật nào.");
@@ -421,12 +317,8 @@ public class VanHanhService
         dsDKPhapLy.ForEach(dk =>
         {
             string soHD = getSoHopDong(dk.getMaHopDong());
-            Console.WriteLine(string.Format("[{0}] - Điều {1} ({2}): {3}",
-                dk.getLoaiDieuKhoan().ToUpper(),
-                dk.getSoThuTuDieu(),
-                soHD,
-                dk.getTieuDeDieuKhoan()));
-            Console.WriteLine(string.Format("   -> Nội dung: {0}\n", dk.getNoiDungDieuKhoan()));
+            Console.WriteLine($"[{dk.getLoaiDieuKhoan().ToUpper()}] - Điều {dk.getSoThuTuDieu()} ({soHD}): {dk.getTieuDeDieuKhoan()}");
+            Console.WriteLine($"   -> Nội dung: {dk.getNoiDungDieuKhoan()}\n");
         });
     }
 }

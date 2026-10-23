@@ -1,6 +1,6 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
-using com.hrmis.data;
+using com.hrmis.dao;
 using com.hrmis.enums;
 using com.hrmis.models;
 
@@ -8,13 +8,20 @@ namespace com.hrmis.services;
 
 public class TaiChinhService
 {
+    private readonly NhanVienDAO nhanVienDAO = new();
+    private readonly PhongBanDAO phongBanDAO = new();
+    private readonly ChucVuDAO chucVuDAO = new();
+    private readonly BangLuongDAO bangLuongDAO = new();
+    private readonly ChiTietBangLuongDAO chiTietBangLuongDAO = new();
+    private readonly DanhGiaHieuSuatDAO danhGiaHieuSuatDAO = new();
+    private readonly ChiTietDanhGiaDAO chiTietDanhGiaDAO = new();
+    private readonly DonXinNghiDAO donXinNghiDAO = new();
+    private readonly ChamCongDAO chamCongDAO = new();
+
     private static readonly CultureInfo VI_CULTURE = CultureInfo.GetCultureInfo("vi-VN");
     private static readonly string LINE = new string('-', 78);
 
-    private static string tien(double v)
-    {
-        return Math.Round(v).ToString("N0", VI_CULTURE);
-    }
+    private static string tien(double v) => Math.Round(v).ToString("N0", VI_CULTURE);
 
     private static string chuanHoa(string s)
     {
@@ -35,44 +42,23 @@ public class TaiChinhService
 
     private static string hoTen(NhanVien nv) => nv.HoTenNV();
 
-    private static NhanVien? timNhanVien(int maNV)
-    {
-        return DatabaseMock.dsNhanVien.FirstOrDefault(nv => nv.getMaNhanVien() == maNV);
-    }
+    private NhanVien? timNhanVien(int maNV) => nhanVienDAO.GetById(maNV);
 
-    private static string tenNV(int maNV)
+    private string tenNV(int maNV)
     {
         var nv = timNhanVien(maNV);
         return nv == null ? "(không rõ #" + maNV + ")" : hoTen(nv);
     }
 
-    private static string tenPhongBan(int? maPB)
-    {
-        var pb = DatabaseMock.dsPhongBan.FirstOrDefault(p => p.getmaPhongBan().HasValue && p.getmaPhongBan() == maPB);
-        return pb?.gettenPhongBan() ?? "(không rõ)";
-    }
+    private string tenPhongBan(int maPB) => phongBanDAO.GetTenPhongBan(maPB);
 
-    private static string tenChucVu(int? maCV)
-    {
-        var cv = DatabaseMock.dsChucVu.FirstOrDefault(c => c.getmaChucVu().HasValue && c.getmaChucVu() == maCV);
-        return cv?.gettenChucVu() ?? "(không rõ)";
-    }
+    private string tenChucVu(int maCV) => chucVuDAO.GetTenChucVu(maCV);
 
-    private static string tenChucVuCuaNV(int maNV)
-    {
-        var nv = timNhanVien(maNV);
-        return nv == null ? "" : tenChucVu(nv.getMaChucVu());
-    }
+    private List<ChiTietBangLuong> chiTietCua(BangLuong bl) =>
+        chiTietBangLuongDAO.GetByBangLuong(bl.getMaBangLuong());
 
-    private static List<ChiTietBangLuong> chiTietCua(BangLuong bl)
-    {
-        return DatabaseMock.dsChiTietBangLuong.Where(ct => ct.getMaBangLuong() == bl.getMaBangLuong()).ToList();
-    }
-
-    private static List<BangLuong> bangLuongTheoKy(int thang, int nam)
-    {
-        return DatabaseMock.dsBangLuong.Where(bl => bl.getKyThang() == thang && bl.getKyNam() == nam).ToList();
-    }
+    private List<BangLuong> bangLuongTheoKy(int thang, int nam) =>
+        bangLuongDAO.GetByKy(thang, nam);
 
     private static void tieuDe(string s)
     {
@@ -82,19 +68,9 @@ public class TaiChinhService
         Console.WriteLine(new string('=', 78));
     }
 
-    private static bool khongCoDuLieu<T>(ICollection<T> c, string thongBao)
-    {
-        if (c == null || c.Count == 0)
-        {
-            Console.WriteLine(thongBao);
-            return true;
-        }
-        return false;
-    }
-
-    // =============================================
-    // CÂU 21 (Câu 1 Hảo): In phiếu lương cá nhân (Payslip)
-    // =============================================
+    // =========================================================================
+    // CÂU 21: In phiếu lương cá nhân (Payslip)
+    // =========================================================================
     public void inPhieuLuong(int maNV, int thang, int nam)
     {
         var nv = timNhanVien(maNV);
@@ -104,18 +80,18 @@ public class TaiChinhService
             return;
         }
 
-        var bl = DatabaseMock.dsBangLuong.FirstOrDefault(b => b.getMaNhanVien() == maNV && b.getKyThang() == thang && b.getKyNam() == nam);
+        var bl = bangLuongDAO.GetByNhanVienVaKy(maNV, thang, nam);
         if (bl == null)
         {
-            Console.WriteLine(string.Format("Nhân viên {0} chưa có bảng lương kỳ {1:D2}/{2}.", hoTen(nv), thang, nam));
+            Console.WriteLine($"Nhân viên {hoTen(nv)} chưa có bảng lương kỳ {thang:D2}/{nam}.");
             return;
         }
 
         var ct = chiTietCua(bl);
-        tieuDe(string.Format("PHIẾU LƯƠNG THÁNG {0:D2}/{1}", thang, nam));
-        Console.WriteLine(string.Format("Nhân viên : {0} (Mã {1})", hoTen(nv), nv.getMaNhanVien()));
-        Console.WriteLine(string.Format("Phòng ban : {0}", tenPhongBan(nv.getMaPhongBan())));
-        Console.WriteLine(string.Format("Chức vụ   : {0}", tenChucVu(nv.getMaChucVu())));
+        tieuDe($"PHIẾU LƯƠNG THÁNG {thang:D2}/{nam}");
+        Console.WriteLine($"Nhân viên : {hoTen(nv)} (Mã {nv.getMaNhanVien()})");
+        Console.WriteLine($"Phòng ban : {tenPhongBan(nv.getMaPhongBan())}");
+        Console.WriteLine($"Chức vụ   : {tenChucVu(nv.getMaChucVu())}");
         Console.WriteLine(LINE);
 
         if (ct.Count == 0)
@@ -144,30 +120,27 @@ public class TaiChinhService
                 }
             }
 
-            Console.WriteLine(string.Format("{0,-40} {1,20}", "Lương cơ bản", tien(luongCoBan)));
+            Console.WriteLine($"{"Lương cơ bản",-40} {tien(luongCoBan),20}");
             Console.WriteLine("\nCác khoản cộng (phụ cấp, thưởng, OT):");
             if (khoanCong.Count == 0) Console.WriteLine("  (không có)");
             foreach (var c in khoanCong)
             {
-                string ghiChuStr = string.IsNullOrEmpty(c.getGhiChu()) ? "" : "(" + c.getGhiChu() + ")";
-                Console.WriteLine(string.Format("  + {0,-37} {1,20}   {2}", c.getTenKhoanMuc(), tien(c.getSoTien()), ghiChuStr));
+                Console.WriteLine($"  + {c.getTenKhoanMuc(),-37} {tien(c.getSoTien()),20}   {(string.IsNullOrEmpty(c.getGhiChu()) ? "" : "(" + c.getGhiChu() + ")")}");
             }
 
             Console.WriteLine("\nCác khoản trừ (BHXH, thuế, phạt trễ):");
             if (khoanTru.Count == 0) Console.WriteLine("  (không có)");
             foreach (var c in khoanTru)
             {
-                string ghiChuStr = string.IsNullOrEmpty(c.getGhiChu()) ? "" : "(" + c.getGhiChu() + ")";
-                Console.WriteLine(string.Format("  - {0,-37} {1,20}   {2}", c.getTenKhoanMuc(), tien(c.getSoTien()), ghiChuStr));
+                Console.WriteLine($"  - {c.getTenKhoanMuc(),-37} {tien(c.getSoTien()),20}   {(string.IsNullOrEmpty(c.getGhiChu()) ? "" : "(" + c.getGhiChu() + ")")}");
             }
         }
 
         Console.WriteLine(LINE);
-        Console.WriteLine(string.Format("{0,-40} {1,20}", "Tổng thu nhập", tien(bl.getTongThuNhap())));
-        Console.WriteLine(string.Format("{0,-40} {1,20}", "Tổng khấu trừ", tien(bl.getTongKhauTru())));
-        Console.WriteLine(string.Format("{0,-40} {1,20} VND", "THỰC LÃNH", tien(bl.getThucLanh())));
-        string ngayChiTraStr = bl.getNgayChiTra().HasValue ? $" (ngày {bl.getNgayChiTra()})" : "";
-        Console.WriteLine(string.Format("Trạng thái chi trả: {0}{1}", bl.getTrangThaiChiTra(), ngayChiTraStr));
+        Console.WriteLine($"{"Tổng thu nhập",-40} {tien(bl.getTongThuNhap()),20}");
+        Console.WriteLine($"{"Tổng khấu trừ",-40} {tien(bl.getTongKhauTru()),20}");
+        Console.WriteLine($"{"THỰC LÃNH",-40} {tien(bl.getThucLanh()),20} VND");
+        Console.WriteLine($"Trạng thái chi trả: {bl.getTrangThaiChiTra()}{(bl.getNgayChiTra().HasValue ? $" (ngày {bl.getNgayChiTra()})" : "")}");
 
         if (ct.Count > 0)
         {
@@ -180,103 +153,112 @@ public class TaiChinhService
         }
     }
 
-    // =============================================
-    // CÂU 22 (Câu 2 Hảo): Bảng tổng hợp chi phí lương tháng
-    // =============================================
+    // =========================================================================
+    // CÂU 22: Bảng tổng hợp chi phí lương tháng
+    // =========================================================================
     public void bangTongHopLuongThang(int thang, int nam)
     {
-        tieuDe(string.Format("BẢNG TỔNG HỢP LƯƠNG THÁNG {0:D2}/{1}", thang, nam));
+        tieuDe($"BẢNG TỔNG HỢP LƯƠNG THÁNG {thang:D2}/{nam}");
         var ds = bangLuongTheoKy(thang, nam);
-        if (khongCoDuLieu(ds, "Chưa có bảng lương nào trong kỳ này.")) return;
+        if (ds.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào trong kỳ này.");
+            return;
+        }
 
-        Console.WriteLine(string.Format("{0,-6} {1,-22} {2,15} {3,15} {4,15}", "Mã NV", "Tên NV", "Tổng thu nhập", "Tổng khấu trừ", "Thực lãnh"));
+        Console.WriteLine($"{"Mã NV",-6} {"Tên NV",-22} {"Tổng thu nhập",15} {"Tổng khấu trừ",15} {"Thực lãnh",15}");
         Console.WriteLine(LINE);
         double tThuNhap = 0, tKhauTru = 0, tThucLanh = 0;
         foreach (var bl in ds)
         {
-            Console.WriteLine(string.Format("{0,-6} {1,-22} {2,15} {3,15} {4,15}",
-                bl.getMaNhanVien(), tenNV(bl.getMaNhanVien()),
-                tien(bl.getTongThuNhap()), tien(bl.getTongKhauTru()), tien(bl.getThucLanh())));
+            Console.WriteLine($"{bl.getMaNhanVien(),-6} {tenNV(bl.getMaNhanVien()),-22} {tien(bl.getTongThuNhap()),15} {tien(bl.getTongKhauTru()),15} {tien(bl.getThucLanh()),15}");
             tThuNhap += bl.getTongThuNhap();
             tKhauTru += bl.getTongKhauTru();
             tThucLanh += bl.getThucLanh();
         }
         Console.WriteLine(LINE);
-        Console.WriteLine(string.Format("{0,-29} {1,15} {2,15} {3,15}",
-            "TỔNG CỘNG (" + ds.Count + " nhân viên)", tien(tThuNhap), tien(tKhauTru), tien(tThucLanh)));
+        Console.WriteLine($"{$"TỔNG CỘNG ({ds.Count} nhân viên)",-29} {tien(tThuNhap),15} {tien(tKhauTru),15} {tien(tThucLanh),15}");
     }
 
-    // =============================================
-    // CÂU 23 (Câu 3 Hảo): Thống kê quỹ lương theo phòng ban
-    // =============================================
+    // =========================================================================
+    // CÂU 23: Thống kê quỹ lương theo phòng ban
+    // =========================================================================
     public void quyLuongTheoPhongBan(int thang, int nam)
     {
-        tieuDe(string.Format("QUỸ LƯƠNG THỰC LÃNH THEO PHÒNG BAN - THÁNG {0:D2}/{1}", thang, nam));
+        tieuDe($"QUỸ LƯƠNG THỰC LÃNH THEO PHÒNG BAN - THÁNG {thang:D2}/{nam}");
         var ds = bangLuongTheoKy(thang, nam);
-        if (khongCoDuLieu(ds, "Chưa có bảng lương nào trong kỳ này.")) return;
+        if (ds.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào trong kỳ này.");
+            return;
+        }
 
         var quy = new Dictionary<int, double>();
         var soNV = new Dictionary<int, int>();
-        foreach (var pb in DatabaseMock.dsPhongBan)
+        foreach (var pb in phongBanDAO.GetAll())
         {
-            if (pb.getmaPhongBan().HasValue) quy[pb.getmaPhongBan().Value] = 0.0;
+            int maPB = pb.getmaPhongBan() ?? 0; quy[maPB] = 0.0;
+            soNV[maPB] = 0;
         }
 
         foreach (var bl in ds)
         {
             var nv = timNhanVien(bl.getMaNhanVien());
             if (nv == null) continue;
-            int pbId = nv.getMaPhongBan();
-            quy[pbId] = quy.GetValueOrDefault(pbId, 0.0) + bl.getThucLanh();
-            soNV[pbId] = soNV.GetValueOrDefault(pbId, 0) + 1;
+            int pb = nv.getMaPhongBan();
+            quy[pb] = quy.GetValueOrDefault(pb, 0.0) + bl.getThucLanh();
+            soNV[pb] = soNV.GetValueOrDefault(pb, 0) + 1;
         }
 
-        Console.WriteLine(string.Format("{0,-6} {1,-24} {2,10} {3,22}", "Mã PB", "Phòng ban", "Số NV", "Quỹ lương thực lãnh"));
+        Console.WriteLine($"{"Mã PB",-6} {"Phòng ban",-24} {"Số NV",10} {"Quỹ lương thực lãnh",22}");
         Console.WriteLine(LINE);
         double tong = 0;
-        foreach (var kv in quy)
+        foreach (var (k, v) in quy)
         {
-            Console.WriteLine(string.Format("{0,-6} {1,-24} {2,10} {3,22}",
-                kv.Key, tenPhongBan(kv.Key), soNV.GetValueOrDefault(kv.Key, 0), tien(kv.Value)));
-            tong += kv.Value;
+            Console.WriteLine($"{k,-6} {tenPhongBan(k),-24} {soNV.GetValueOrDefault(k, 0),10} {tien(v),22}");
+            tong += v;
         }
         Console.WriteLine(LINE);
-        Console.WriteLine(string.Format("{0,-31} {1,10} {2,22}", "TỔNG CÔNG TY", "", tien(tong)));
+        Console.WriteLine($"{"TỔNG CÔNG TY",-31} {"",10} {tien(tong),22}");
     }
 
-    // =============================================
-    // CÂU 24 (Câu 4 Hảo): Top 3 thu nhập thực lãnh cao nhất
-    // =============================================
+    // =========================================================================
+    // CÂU 24: Top 3 thu nhập thực lãnh cao nhất
+    // =========================================================================
     public void topThuNhapCaoNhat(int thang, int nam)
     {
-        tieuDe(string.Format("TOP 3 THU NHẬP THỰC LÃNH CAO NHẤT - THÁNG {0:D2}/{1}", thang, nam));
-        var ds = bangLuongTheoKy(thang, nam);
-        if (khongCoDuLieu(ds, "Chưa có bảng lương nào trong kỳ này.")) return;
+        tieuDe($"TOP 3 THU NHẬP THỰC LÃNH CAO NHẤT - THÁNG {thang:D2}/{nam}");
+        var top = bangLuongDAO.GetTopThuNhap(thang, nam, 3);
+        if (top.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào trong kỳ này.");
+            return;
+        }
 
-        var top = ds.OrderByDescending(b => b.getThucLanh()).Take(3).ToList();
-
-        Console.WriteLine(string.Format("{0,-5} {1,-6} {2,-22} {3,-24} {4,15}", "Hạng", "Mã NV", "Tên NV", "Chức vụ", "Thực lãnh"));
+        Console.WriteLine($"{"Hạng",-5} {"Mã NV",-6} {"Tên NV",-22} {"Chức vụ",-24} {"Thực lãnh",15}");
         Console.WriteLine(LINE);
         int hang = 1;
         foreach (var bl in top)
         {
             var nv = timNhanVien(bl.getMaNhanVien());
-            Console.WriteLine(string.Format("{0,-5} {1,-6} {2,-22} {3,-24} {4,15}",
-                hang++, bl.getMaNhanVien(), tenNV(bl.getMaNhanVien()),
-                nv == null ? "" : tenChucVu(nv.getMaChucVu()), tien(bl.getThucLanh())));
+            Console.WriteLine($"{hang++,-5} {bl.getMaNhanVien(),-6} {tenNV(bl.getMaNhanVien()),-22} {(nv == null ? "" : tenChucVu(nv.getMaChucVu())),-24} {tien(bl.getThucLanh()),15}");
         }
     }
 
-    // =============================================
-    // CÂU 25 (Câu 5 Hảo): Chi tiết khấu trừ bảo hiểm (BHXH, BHYT, BHTN)
-    // =============================================
+    // =========================================================================
+    // CÂU 25: Chi tiết khấu trừ bảo hiểm
+    // =========================================================================
     public void thongKeBaoHiem(int thang, int nam)
     {
-        tieuDe(string.Format("THỐNG KÊ BẢO HIỂM BẮT BUỘC ĐÃ TRÍCH - THÁNG {0:D2}/{1}", thang, nam));
+        tieuDe($"THỐNG KÊ BẢO HIỂM BẮT BUỘC ĐÃ TRÍCH - THÁNG {thang:D2}/{nam}");
         var ds = bangLuongTheoKy(thang, nam);
-        if (khongCoDuLieu(ds, "Chưa có bảng lương nào trong kỳ này.")) return;
+        if (ds.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào trong kỳ này.");
+            return;
+        }
 
-        Console.WriteLine(string.Format("{0,-6} {1,-22} {2,12} {3,12} {4,12} {5,13}", "Mã NV", "Tên NV", "BHXH", "BHYT", "BHTN", "Tổng"));
+        Console.WriteLine($"{"Mã NV",-6} {"Tên NV",-22} {"BHXH",12} {"BHYT",12} {"BHTN",12} {"Tổng",13}");
         Console.WriteLine(LINE);
         double sXH = 0, sYT = 0, sTN = 0;
         foreach (var bl in ds)
@@ -291,24 +273,27 @@ public class TaiChinhService
                 else if (ten.Contains("y te")) yt += c.getSoTien();
                 else xh += c.getSoTien();
             }
-            Console.WriteLine(string.Format("{0,-6} {1,-22} {2,12} {3,12} {4,12} {5,13}",
-                bl.getMaNhanVien(), tenNV(bl.getMaNhanVien()), tien(xh), tien(yt), tien(tn), tien(xh + yt + tn)));
+            Console.WriteLine($"{bl.getMaNhanVien(),-6} {tenNV(bl.getMaNhanVien()),-22} {tien(xh),12} {tien(yt),12} {tien(tn),12} {tien(xh + yt + tn),13}");
             sXH += xh; sYT += yt; sTN += tn;
         }
         Console.WriteLine(LINE);
-        Console.WriteLine(string.Format("{0,-29} {1,12} {2,12} {3,12} {4,13}", "TỔNG CỘNG", tien(sXH), tien(sYT), tien(sTN), tien(sXH + sYT + sTN)));
+        Console.WriteLine($"{"TỔNG CỘNG",-29} {tien(sXH),12} {tien(sYT),12} {tien(sTN),12} {tien(sXH + sYT + sTN),13}");
     }
 
-    // =============================================
-    // CÂU 26 (Câu 6 Hảo): Báo cáo thưởng và phụ cấp
-    // =============================================
+    // =========================================================================
+    // CÂU 26: Báo cáo thưởng và phụ cấp
+    // =========================================================================
     public void baoCaoThuongPhuCap(int thang, int nam)
     {
-        tieuDe(string.Format("BÁO CÁO THƯỞNG & PHỤ CẤP - THÁNG {0:D2}/{1}", thang, nam));
+        tieuDe($"BÁO CÁO THƯỞNG & PHỤ CẤP - THÁNG {thang:D2}/{nam}");
         var ds = bangLuongTheoKy(thang, nam);
-        if (khongCoDuLieu(ds, "Chưa có bảng lương nào trong kỳ này.")) return;
+        if (ds.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào trong kỳ này.");
+            return;
+        }
 
-        Console.WriteLine(string.Format("{0,-6} {1,-20} {2,-26} {3,13}  {4}", "Mã NV", "Tên NV", "Khoản mục", "Số tiền", "Lý do chi"));
+        Console.WriteLine($"{"Mã NV",-6} {"Tên NV",-20} {"Khoản mục",-26} {"Số tiền",13}  {"Lý do chi"}");
         Console.WriteLine(LINE);
         double tong = 0;
         int dem = 0;
@@ -319,8 +304,7 @@ public class TaiChinhService
                 if (c.getLoaiKhoanMuc() != LoaiKhoanMuc.CONG) continue;
                 string ten = chuanHoa(c.getTenKhoanMuc());
                 if (!ten.Contains("phu cap") && !ten.Contains("thuong")) continue;
-                Console.WriteLine(string.Format("{0,-6} {1,-20} {2,-26} {3,13}  {4}",
-                    bl.getMaNhanVien(), tenNV(bl.getMaNhanVien()), c.getTenKhoanMuc(), tien(c.getSoTien()), c.getGhiChu() ?? ""));
+                Console.WriteLine($"{bl.getMaNhanVien(),-6} {tenNV(bl.getMaNhanVien()),-20} {c.getTenKhoanMuc(),-26} {tien(c.getSoTien()),13}  {(string.IsNullOrEmpty(c.getGhiChu()) ? "" : c.getGhiChu())}");
                 tong += c.getSoTien();
                 dem++;
             }
@@ -331,15 +315,15 @@ public class TaiChinhService
             return;
         }
         Console.WriteLine(LINE);
-        Console.WriteLine(string.Format("TỔNG {0} khoản: {1} VND", dem, tien(tong)));
+        Console.WriteLine($"TỔNG {dem} khoản: {tien(tong)} VND");
     }
 
-    // =============================================
-    // CÂU 27 (Câu 7 Hảo): Bản in phiếu đánh giá KPI chi tiết
-    // =============================================
+    // =========================================================================
+    // CÂU 27: Bản in phiếu KPI chi tiết
+    // =========================================================================
     public void inPhieuKPI(int maDanhGia)
     {
-        var dg = DatabaseMock.dsDanhGiaHieuSuat.FirstOrDefault(d => d.getMaDanhGia() == maDanhGia);
+        var dg = danhGiaHieuSuatDAO.GetById(maDanhGia);
         if (dg == null)
         {
             Console.WriteLine("Không tìm thấy phiếu đánh giá có mã " + maDanhGia);
@@ -348,43 +332,56 @@ public class TaiChinhService
         var nv = timNhanVien(dg.getMaNhanVien());
 
         tieuDe("PHIẾU ĐÁNH GIÁ HIỆU SUẤT (KPI) - Mã " + dg.getMaDanhGia());
-        Console.WriteLine(string.Format("Nhân viên được đánh giá: {0} (Mã {1})", tenNV(dg.getMaNhanVien()), dg.getMaNhanVien()));
+        Console.WriteLine($"Nhân viên được đánh giá: {tenNV(dg.getMaNhanVien())} (Mã {dg.getMaNhanVien()})");
         if (nv != null)
         {
-            Console.WriteLine(string.Format("Phòng ban / Chức vụ    : {0} / {1}", tenPhongBan(nv.getMaPhongBan()), tenChucVu(nv.getMaChucVu())));
+            Console.WriteLine($"Phòng ban / Chức vụ    : {tenPhongBan(nv.getMaPhongBan())} / {tenChucVu(nv.getMaChucVu())}");
         }
-        Console.WriteLine(string.Format("Người đánh giá         : {0} (Mã {1})", tenNV(dg.getNguoiDanhGia()), dg.getNguoiDanhGia()));
-        Console.WriteLine(string.Format("Kỳ đánh giá            : {0} / {1}", dg.getKyDanhGia(), dg.getNam()));
-        Console.WriteLine(string.Format("Điểm tổng              : {0:F2}", dg.getDiemTrungBinh()));
-        Console.WriteLine(string.Format("Xếp loại               : {0}", dg.getXepLoai()));
+        Console.WriteLine($"Người đánh giá         : {tenNV(dg.getNguoiDanhGia())} (Mã {dg.getNguoiDanhGia()})");
+        Console.WriteLine($"Kỳ đánh giá            : {dg.getKyDanhGia()} / {dg.getNam()}");
+        Console.WriteLine($"Điểm tổng              : {dg.getDiemTrungBinh():F2}");
+        Console.WriteLine($"Xếp loại               : {dg.getXepLoai()}");
         Console.WriteLine(LINE);
 
-        var ct = DatabaseMock.dsChiTietDanhGia.Where(c => c.getMaDanhGia() == maDanhGia).ToList();
-        if (khongCoDuLieu(ct, "(Phiếu này chưa có chi tiết từng tiêu chí)")) return;
+        var ct = chiTietDanhGiaDAO.GetByDanhGia(maDanhGia);
+        if (ct.Count == 0)
+        {
+            Console.WriteLine("(Phiếu này chưa có chi tiết từng tiêu chí)");
+            return;
+        }
 
-        Console.WriteLine(string.Format("{0,-30} {1,9} {2,8}  {3}", "Tiêu chí", "Trọng số", "Điểm", "Nhận xét"));
+        Console.WriteLine($"{"Tiêu chí",-30} {"Trọng số",9} {"Điểm",8}  {"Nhận xét"}");
         Console.WriteLine(LINE);
         foreach (var c in ct)
         {
-            Console.WriteLine(string.Format("{0,-30} {1,9:F2} {2,8:F2}  {3}",
-                c.getTieuChiDanhGia(), c.getTrongSo(), c.getDiemSo(), c.getNhanXetChiTiet() ?? ""));
+            Console.WriteLine($"{c.getTieuChiDanhGia(),-30} {c.getTrongSo(),9:F2} {c.getDiemSo(),8:F2}  {(string.IsNullOrEmpty(c.getNhanXetChiTiet()) ? "" : c.getNhanXetChiTiet())}");
         }
     }
 
-    // =============================================
-    // CÂU 28 (Câu 8 Hảo): Xếp hạng hiệu suất theo phân loại
-    // =============================================
+    // =========================================================================
+    // CÂU 28: Xếp hạng hiệu suất theo xếp loại
+    // =========================================================================
     public void xepHangHieuSuat(string kyDanhGia, int nam)
     {
-        tieuDe(string.Format("XẾP HẠNG HIỆU SUẤT - {0} / {1}", kyDanhGia, nam));
+        tieuDe($"XẾP HẠNG HIỆU SUẤT - {kyDanhGia} / {nam}");
         string kyChuan = chuanHoa(kyDanhGia).Trim();
-        var ds = DatabaseMock.dsDanhGiaHieuSuat.Where(d => d.getNam() == nam && chuanHoa(d.getKyDanhGia()).Trim().Equals(kyChuan)).ToList();
-        if (khongCoDuLieu(ds, "Chưa có đánh giá nào trong kỳ này.")) return;
+        var ds = danhGiaHieuSuatDAO.GetByNam(nam)
+            .Where(d => chuanHoa(d.getKyDanhGia()).Trim().Equals(kyChuan))
+            .ToList();
 
-        foreach (XepLoai xl in Enum.GetValues(typeof(XepLoai)))
+        if (ds.Count == 0)
         {
-            var nhom = ds.Where(d => d.getXepLoai() == xl).OrderByDescending(d => d.getDiemTrungBinh()).ToList();
-            Console.WriteLine(string.Format("\n>> {0} ({1} nhân viên)", xl, nhom.Count));
+            Console.WriteLine("Chưa có đánh giá nào trong kỳ này.");
+            return;
+        }
+
+        foreach (XepLoai xl in Enum.GetValues<XepLoai>())
+        {
+            var nhom = ds.Where(d => d.getXepLoai() == xl)
+                .OrderByDescending(d => d.getDiemTrungBinh())
+                .ToList();
+
+            Console.WriteLine($"\n>> {xl} ({nhom.Count} nhân viên)");
             if (nhom.Count == 0)
             {
                 Console.WriteLine("   (không có)");
@@ -392,90 +389,98 @@ public class TaiChinhService
             }
             foreach (var d in nhom)
             {
-                Console.WriteLine(string.Format("   {0,-6} {1,-22} {2,-24} {3,6:F2}",
-                    d.getMaNhanVien(), tenNV(d.getMaNhanVien()), tenChucVuCuaNV(d.getMaNhanVien()), d.getDiemTrungBinh()));
+                Console.WriteLine($"   {d.getMaNhanVien(),-6} {tenNV(d.getMaNhanVien()),-22} {tenChucVuCuaNV(d.getMaNhanVien()),-24} {d.getDiemTrungBinh(),6:F2}");
             }
         }
     }
 
-    // =============================================
-    // CÂU 29 (Câu 9 Hảo): Nhân sự xuất sắc & không nghỉ ngày nào
-    // =============================================
+    private string tenChucVuCuaNV(int maNV)
+    {
+        var nv = timNhanVien(maNV);
+        return nv == null ? "" : tenChucVu(nv.getMaChucVu());
+    }
+
+    // =========================================================================
+    // CÂU 29: Nhân sự xuất sắc & không nghỉ ngày nào
+    // =========================================================================
     public void timNhanSuXuatSac(int quy, int nam)
     {
-        tieuDe(string.Format("NHÂN SỰ XUẤT SẮC & KHÔNG NGHỈ NGÀY NÀO - QUÝ {0}/{1}", quy, nam));
+        tieuDe($"NHÂN SỰ XUẤT SẮC & KHÔNG NGHỈ NGÀY NÀO - QUÝ {quy}/{nam}");
         if (quy < 1 || quy > 4)
         {
             Console.WriteLine("Quý phải từ 1 đến 4.");
             return;
         }
-
         var dau = new DateOnly(nam, (quy - 1) * 3 + 1, 1);
         var cuoi = dau.AddMonths(3).AddDays(-1);
         string kyChuan = chuanHoa("Quy " + quy);
 
-        var xuatSac = DatabaseMock.dsDanhGiaHieuSuat.Where(d => d.getNam() == nam && chuanHoa(d.getKyDanhGia()).Trim().Equals(kyChuan)
-            && d.getXepLoai() == XepLoai.XUAT_SAC).ToList();
+        var xuatSac = danhGiaHieuSuatDAO.GetByNam(nam)
+            .Where(d => chuanHoa(d.getKyDanhGia()).Trim().Equals(kyChuan) && d.getXepLoai() == XepLoai.XUAT_SAC)
+            .ToList();
 
         int dem = 0;
         foreach (var d in xuatSac)
         {
             int maNV = d.getMaNhanVien();
-            bool coNghiPhep = DatabaseMock.dsDonXinNghi.Any(n =>
-                n.getMaNhanVien() == maNV && n.getTrangThaiDuyet() == TrangThaiDuyet.DA_DUYET
+            bool coNghiPhep = donXinNghiDAO.GetByNhanVien(maNV).Any(n =>
+                n.getTrangThaiDuyet() == TrangThaiDuyet.DA_DUYET
                 && n.getNgayBatDau() <= cuoi && n.getNgayKetThuc() >= dau);
 
-            bool coVang = DatabaseMock.dsChamCong.Any(c =>
-                c.getMaNhanVien() == maNV && c.getNgayLamViec() >= dau && c.getNgayLamViec() <= cuoi
+            bool coVang = chamCongDAO.GetAll().Any(c =>
+                c.getMaNhanVien() == maNV
+                && c.getNgayLamViec() >= dau && c.getNgayLamViec() <= cuoi
                 && (c.getTrangThaiCong() == TrangThaiCong.VANG_MAT_CO_PHEP || c.getTrangThaiCong() == TrangThaiCong.VANG_MAT_KHONG_PHEP));
 
             if (coNghiPhep || coVang) continue;
             if (dem == 0)
             {
-                Console.WriteLine(string.Format("{0,-6} {1,-22} {2,-24} {3,8}", "Mã NV", "Tên NV", "Chức vụ", "Điểm"));
+                Console.WriteLine($"{"Mã NV",-6} {"Tên NV",-22} {"Chức vụ",-24} {"Điểm",8}");
                 Console.WriteLine(LINE);
             }
-            Console.WriteLine(string.Format("{0,-6} {1,-22} {2,-24} {3,8:F2}",
-                maNV, tenNV(maNV), tenChucVuCuaNV(maNV), d.getDiemTrungBinh()));
+            Console.WriteLine($"{maNV,-6} {tenNV(maNV),-22} {tenChucVuCuaNV(maNV),-24} {d.getDiemTrungBinh(),8:F2}");
             dem++;
         }
         if (dem == 0) Console.WriteLine("Không có nhân viên nào thỏa cả hai điều kiện.");
-        else Console.WriteLine("\nTìm thấy " + dem + " nhân viên.");
+        else Console.WriteLine($"\nTìm thấy {dem} nhân viên.");
     }
 
-    // =============================================
-    // CÂU 30 (Câu 10 Hảo): Thu nhập trung bình theo chức vụ
-    // =============================================
+    // =========================================================================
+    // CÂU 30: Thu nhập trung bình theo từng chức vụ
+    // =========================================================================
     public void thuNhapTrungBinhTheoChucVu()
     {
         tieuDe("THU NHẬP TRUNG BÌNH THEO CHỨC VỤ (toàn bộ bảng lương)");
-        if (khongCoDuLieu(DatabaseMock.dsBangLuong, "Chưa có bảng lương nào.")) return;
+        var tatCaBangLuong = bangLuongDAO.GetAll();
+        if (tatCaBangLuong.Count == 0)
+        {
+            Console.WriteLine("Chưa có bảng lương nào.");
+            return;
+        }
 
         var theoChucVu = new Dictionary<int, List<BangLuong>>();
-        foreach (var bl in DatabaseMock.dsBangLuong)
+        foreach (var bl in tatCaBangLuong)
         {
             var nv = timNhanVien(bl.getMaNhanVien());
             if (nv == null) continue;
-            int cvId = nv.getMaChucVu();
-            if (!theoChucVu.ContainsKey(cvId))
+            if (!theoChucVu.ContainsKey(nv.getMaChucVu()))
             {
-                theoChucVu[cvId] = new List<BangLuong>();
+                theoChucVu[nv.getMaChucVu()] = new List<BangLuong>();
             }
-            theoChucVu[cvId].Add(bl);
+            theoChucVu[nv.getMaChucVu()].Add(bl);
         }
 
-        var ds = theoChucVu.OrderByDescending(kv => tb(kv.Value)).ToList();
+        var ds = theoChucVu.ToList();
+        ds.Sort((a, b) => tb(b.Value).CompareTo(tb(a.Value)));
 
-        Console.WriteLine(string.Format("{0,-26} {1,10} {2,16}", "Chức vụ", "Số bảng lương", "TB thu nhập"));
+        Console.WriteLine($"{"Chức vụ",-26} {"Số bảng lương",10} {"TB thu nhập",16}");
         Console.WriteLine(LINE);
         foreach (var e in ds)
         {
-            Console.WriteLine(string.Format("{0,-26} {1,10} {2,16}", tenChucVu(e.Key), e.Value.Count, tien(tb(e.Value))));
+            Console.WriteLine($"{tenChucVu(e.Key),-26} {e.Value.Count,10} {tien(tb(e.Value)),16}");
         }
     }
 
-    private static double tb(List<BangLuong> ds)
-    {
-        return ds.Count == 0 ? 0 : ds.Average(bl => bl.getTongThuNhap());
-    }
+    private static double tb(List<BangLuong> ds) =>
+        ds.Count == 0 ? 0 : ds.Average(bl => bl.getTongThuNhap());
 }
