@@ -10,44 +10,32 @@ public class Program
     private static readonly TaiChinhService TAI_CHINH_SERVICE = new();
 
     private static void printMenu() {
-        Console.WriteLine("\n===================== MENU TRUY VẤN HRM =====================");
-        Console.WriteLine("--- PHÂN HỆ 1: NHÂN SỰ & TỔ CHỨC (LĨNH: CÂU 1 -> 10) ---");
-        Console.WriteLine("1. Danh sách nhân viên");
-        Console.WriteLine("2. Danh sách phòng ban");
-        Console.WriteLine("3. Tra cứu nhân viên theo phòng ban");
-        Console.WriteLine("4. Top 3 nhân viên thâm niên");
-        Console.WriteLine("5. Danh sách cấp dưới của quản lý");
-        Console.WriteLine("6. Chi tiết nhóm nhân viên");
-        Console.WriteLine("7. Thống kê nhân viên đa nhiệm");
-        Console.WriteLine("8. Thống kê nhân sự theo chức vụ");
-        Console.WriteLine("9. Danh sách nhân viên chưa vào nhóm");
-        Console.WriteLine("10. Tìm nhân sự theo từ khóa");
+        Console.WriteLine("\n" + new string('=', 110));
+        Console.WriteLine("                 HỆ THỐNG THÔNG TIN QUẢN TRỊ NHÂN SỰ & CÔNG VIỆC (HRMIS)");
+        Console.WriteLine(new string('=', 110));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}",
+                "[ PHÂN HỆ 1: LĨNH ]", "[ PHÂN HỆ 2: DƯƠNG ]", "[ PHÂN HỆ 3: HẠO ]"));
+        Console.WriteLine(new string('-', 110));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 1. Danh sách toàn bộ nhân sự", "11. In chi tiết hợp đồng", "21. In phiếu lương (Payslip)"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 2. Cơ cấu tổ chức phòng ban", "12. Cảnh báo HĐ sắp hết hạn", "22. Bảng tổng hợp lương tháng"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 3. Tra cứu theo phòng ban (*)", "13. Bảng chấm công cá nhân", "23. Quỹ lương theo phòng ban"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 4. Top 3 nhân viên thâm niên", "14. Báo cáo xếp hạng đi trễ", "24. Top 3 thực lãnh cao nhất"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 5. Cây phân cấp quản lý", "15. Báo cáo làm thêm giờ (OT)", "25. Thống kê bảo hiểm bắt buộc"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 6. Chi tiết nhóm làm việc", "16. Theo dõi đơn nghỉ phép", "26. Báo cáo thưởng & phụ cấp"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 7. Thống kê nhân sự đa nhiệm", "17. Lịch sử xin nghỉ phép", "27. In phiếu đánh giá KPI"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 8. Phân bổ theo chức vụ", "18. Thống kê chuyên cần 100%", "28. Xếp hạng hiệu suất"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", " 9. NV chưa tham gia nhóm", "19. Thống kê loại hợp đồng", "29. Tìm nhân sự xuất sắc"));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}", "10. Tìm kiếm nhân sự (*)", "20. Lọc điều khoản pháp lý", "30. Lương TB theo chức vụ"));
+        Console.WriteLine(new string('-', 110));
+        Console.WriteLine(string.Format(" {0,-36} {1,-36} {2,-36}",
+                "[91] Demo 10 câu của LĨNH", "[92] Demo 10 câu của DƯƠNG", "[93] Demo 10 câu của HẠO"));
+        Console.WriteLine("  [0] Thoát chương trình         | (*) Có nhập từ bàn phím");
+        Console.WriteLine(new string('=', 110));
+    }
 
-        Console.WriteLine("--- PHÂN HỆ 2: VẬN HÀNH & CHẤM CÔNG (DƯƠNG: CÂU 11 -> 20) ---");
-        Console.WriteLine("11. In chi tiết hợp đồng");
-        Console.WriteLine("12. Cảnh báo hợp đồng sắp hết hạn");
-        Console.WriteLine("13. Bảng chấm công cá nhân");
-        Console.WriteLine("14. Báo cáo đi trễ");
-        Console.WriteLine("15. Báo cáo làm thêm giờ");
-        Console.WriteLine("16. Theo dõi đơn nghỉ phép");
-        Console.WriteLine("17. Lịch sử nghỉ của nhân viên");
-        Console.WriteLine("18. Thống kê chuyên cần");
-        Console.WriteLine("19. Thống kê hợp đồng");
-        Console.WriteLine("20. Lọc điều khoản pháp lý");
-
-        Console.WriteLine("--- PHÂN HỆ 3: TÀI CHÍNH & HIỆU SUẤT (HẠO: CÂU 21 -> 30) ---");
-        Console.WriteLine("21. In phiếu lương cá nhân");
-        Console.WriteLine("22. Bảng tổng hợp lương tháng");
-        Console.WriteLine("23. Quỹ lương theo phòng ban");
-        Console.WriteLine("24. Top thu nhập thực lãnh cao nhất");
-        Console.WriteLine("25. Thống kê bảo hiểm");
-        Console.WriteLine("26. Báo cáo thưởng phụ cấp");
-        Console.WriteLine("27. In phiếu KPI");
-        Console.WriteLine("28. Xếp hạng hiệu suất");
-        Console.WriteLine("29. Tìm nhân sự xuất sắc");
-        Console.WriteLine("30. Thu nhập trung bình theo chức vụ");
-        Console.WriteLine("0. Thoát chương trình");
-        Console.WriteLine("=============================================================");
+    private static void pause() {
+        Console.Write("\n>>> Nhấn phím [ENTER] để quay lại menu...");
+        Console.ReadLine();
     }
 
     private static void executeChoice(int choice) {
@@ -153,6 +141,50 @@ public class Program
             case 30:
                 TAI_CHINH_SERVICE.thuNhapTrungBinhTheoChucVu();
                 break;
+
+            // PHÍM TẮT CHẠY DEMO TỰ ĐỘNG THEO PHÂN HỆ
+            case 91:
+                Console.WriteLine("\n>>> [DEMO TỰ ĐỘNG] CHẠY TOÀN BỘ 10 CÂU CỦA LĨNH (1 -> 10) <<<");
+                NHAN_SU_SERVICE.DanhSachNhanVien();
+                NHAN_SU_SERVICE.danhSachPhongBan();
+                NHAN_SU_SERVICE.traCuuNhanVienTheoPhongBan("Phong CNTT");
+                NHAN_SU_SERVICE.top3NhanVienThamNien();
+                NHAN_SU_SERVICE.danhSachCapDuoiCuaQuanLy(1);
+                NHAN_SU_SERVICE.chiTietNhomNhanVien(1);
+                NHAN_SU_SERVICE.thongKeNhanVienDaNhiemNhieuNhom();
+                NHAN_SU_SERVICE.thongKeNhanSuTheoChucVu();
+                NHAN_SU_SERVICE.danhSachNhanVienChuaVaoNhom();
+                NHAN_SU_SERVICE.timNhanSuTheoTuKhoa("linh");
+                break;
+
+            case 92:
+                Console.WriteLine("\n>>> [DEMO TỰ ĐỘNG] CHẠY TOÀN BỘ 10 CÂU CỦA DƯƠNG (11 -> 20) <<<");
+                VAN_HANH_SERVICE.inHopDongChiTiet(3);
+                VAN_HANH_SERVICE.canhBaoHopDongSapHetHan(DateOnly.FromDateTime(DateTime.Now));
+                VAN_HANH_SERVICE.inBangChamCongCaNhan(2, 3, 2024);
+                VAN_HANH_SERVICE.baocaoDiTre(3, 2024);
+                VAN_HANH_SERVICE.baocaoOT(3, 2024);
+                VAN_HANH_SERVICE.theoDoiDonNghiPhep();
+                VAN_HANH_SERVICE.lsNghi(2);
+                VAN_HANH_SERVICE.thongkeChuyenCan(3, 2024);
+                VAN_HANH_SERVICE.thongkeHopDong();
+                VAN_HANH_SERVICE.locDieuKhoanPhapLy();
+                break;
+
+            case 93:
+                Console.WriteLine("\n>>> [DEMO TỰ ĐỘNG] CHẠY TOÀN BỘ 10 CÂU CỦA HẠO (21 -> 30) <<<");
+                TAI_CHINH_SERVICE.inPhieuLuong(2, 3, 2024);
+                TAI_CHINH_SERVICE.bangTongHopLuongThang(3, 2024);
+                TAI_CHINH_SERVICE.quyLuongTheoPhongBan(3, 2024);
+                TAI_CHINH_SERVICE.topThuNhapCaoNhat(3, 2024);
+                TAI_CHINH_SERVICE.thongKeBaoHiem(3, 2024);
+                TAI_CHINH_SERVICE.baoCaoThuongPhuCap(3, 2024);
+                TAI_CHINH_SERVICE.inPhieuKPI(1);
+                TAI_CHINH_SERVICE.xepHangHieuSuat("Quy 1", 2024);
+                TAI_CHINH_SERVICE.timNhanSuXuatSac(1, 2024);
+                TAI_CHINH_SERVICE.thuNhapTrungBinhTheoChucVu();
+                break;
+
             default:
                 Console.WriteLine("Lựa chọn không hợp lệ. Vui lòng chọn lại.");
                 break;
@@ -174,16 +206,17 @@ public class Program
             }
 
             if (!int.TryParse(input, out int choice)) {
-                Console.WriteLine("Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 30.");
+                Console.WriteLine("Lựa chọn không hợp lệ. Vui lòng nhập số hiển thị trên menu.");
                 continue;
             }
 
             if (choice == 0) {
-                Console.WriteLine("Chương trình kết thúc. Cảm ơn bạn!");
+                Console.WriteLine("\nChương trình kết thúc. Cảm ơn bạn!");
                 break;
             }
 
             executeChoice(choice);
+            pause();
         }
     }
 }
