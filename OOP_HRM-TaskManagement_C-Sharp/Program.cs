@@ -62,7 +62,9 @@ public class Program
                 NHAN_SU_SERVICE.danhSachPhongBan();
                 break;
             case 3:
-                NHAN_SU_SERVICE.traCuuNhanVienTheoPhongBan("Phong CNTT");
+                Console.Write("Nhập mã hoặc tên phòng ban cần tra cứu (VD: Phong CNTT / 1): ");
+                string? phongBanInput = Console.ReadLine()?.Trim();
+                NHAN_SU_SERVICE.traCuuNhanVienTheoPhongBan(phongBanInput ?? "");
                 break;
             case 4:
                 NHAN_SU_SERVICE.top3NhanVienThamNien();
@@ -83,7 +85,9 @@ public class Program
                 NHAN_SU_SERVICE.danhSachNhanVienChuaVaoNhom();
                 break;
             case 10:
-                NHAN_SU_SERVICE.timNhanSuTheoTuKhoa("linh");
+                Console.Write("Nhập từ khóa tìm kiếm nhân sự (họ tên, email hoặc SĐT): ");
+                string? tuKhoaInput = Console.ReadLine()?.Trim();
+                NHAN_SU_SERVICE.timNhanSuTheoTuKhoa(tuKhoaInput ?? "");
                 break;
 
             // DƯƠNG (Câu 11 -> 20: Vận hành, hợp đồng, chấm công, nghỉ phép)
