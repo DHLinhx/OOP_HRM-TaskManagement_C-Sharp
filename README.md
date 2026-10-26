@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Mục lục
+##  Mục lục
 - [Giới thiệu](#-giới-thiệu)
 - [Tính năng chính](#-tính-năng-chính)
 - [Áp dụng lập trình hướng đối tượng (OOP)](#-áp-dụng-lập-trình-hướng-đối-tượng-oop)
@@ -15,7 +15,7 @@
 
 ---
 
-## 📖 Giới thiệu
+##  Giới thiệu
 
 Trong các doanh nghiệp hiện đại, nguồn nhân lực là tài sản cốt lõi quyết định năng lực cạnh tranh. Tuy nhiên, công tác quản trị nhân sự truyền thống thông qua sổ sách hoặc các bảng tính rời rạc (Excel) bộc lộ nhiều điểm nghẽn nghiêm trọng:
 * Dữ liệu chấm công thủ công phân tán, dễ sai sót và khó kiểm soát giờ làm việc thực tế.
@@ -27,7 +27,7 @@ Trong các doanh nghiệp hiện đại, nguồn nhân lực là tài sản cố
 
 ---
 
-## 🚀 Tính năng chính
+##  Tính năng chính
 
 Hệ thống cung cấp đầy đủ 30 chức năng nghiệp vụ được phân rã thành 3 phân hệ chuyên trách trong C#:
 
@@ -69,7 +69,7 @@ Hệ thống cung cấp đầy đủ 30 chức năng nghiệp vụ được phâ
 
 ---
 
-## 💡 Áp dụng lập trình hướng đối tượng (OOP)
+## Áp dụng lập trình hướng đối tượng (OOP)
 
 Ứng dụng C# tuân thủ nghiêm ngặt 4 nguyên lý OOP và các mẫu thiết kế kiến trúc chuẩn mực:
 
@@ -106,7 +106,7 @@ Hệ thống cung cấp đầy đủ 30 chức năng nghiệp vụ được phâ
 
 ---
 
-## 📐 Kiến trúc & Sơ đồ lớp (Class Diagram)
+##  Kiến trúc & Sơ đồ lớp (Class Diagram)
 
 ### 1. Kiến trúc phân tầng C#
 ```
@@ -238,7 +238,7 @@ classDiagram
 
 ---
 
-## 💻 Yêu cầu hệ thống & Công nghệ sử dụng
+##  Yêu cầu hệ thống & Công nghệ sử dụng
 
 ### 1. Môi trường yêu cầu
 - **.NET SDK:** **.NET SDK 10.0** (hoặc tương thích với .NET 8.0 / 9.0).
@@ -255,11 +255,11 @@ classDiagram
 
 ---
 
-## 🛠 Hướng dẫn cài đặt & Chạy chương trình
+## Hướng dẫn cài đặt & Chạy chương trình
 
 1. Mở cửa sổ dòng lệnh (Terminal / Command Prompt / PowerShell) và điều hướng vào thư mục dự án C#:
    ```bash
-   cd "C:\Users\DUONG\Downloads\HRc#\OOP_HRM-TaskManagement_C-Sharp\OOP_HRM-TaskManagement_C-Sharp"
+   cd "liên kết folder OOP_HRM-TaskManagement_C-Sharp"
    ```
 2. Khởi chạy trực tiếp chương trình bằng lệnh `dotnet run`:
    ```bash
@@ -269,7 +269,7 @@ classDiagram
 
 ---
 
-## 👥 Tác giả
+## Tác giả
 
 Đồ án được thực hiện bởi nhóm sinh viên Khoa Công Nghệ Thông Tin dưới sự hướng dẫn khoa học của:
 * **Giảng viên hướng dẫn:** Thầy Nguyễn Minh Đạo
